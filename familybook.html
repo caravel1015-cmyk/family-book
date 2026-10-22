@@ -56,13 +56,16 @@
             </div>
         </div>
 
-        <!-- 雙分頁導覽標籤 -->
+        <!-- 三分頁導覽標籤 -->
         <div class="max-w-md mx-auto px-4 flex border-t border-gray-100">
-            <button id="tabTimeline" onclick="switchTab('timeline')" class="flex-1 py-2.5 text-center text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition">
+            <button id="tabTimeline" onclick="switchTab('timeline')" class="flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition">
                 <i class="fa-solid fa-house-chimney mr-1"></i> 家庭時軸
             </button>
-            <button id="tabPersonal" onclick="switchTab('personal')" class="flex-1 py-2.5 text-center text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition">
+            <button id="tabPersonal" onclick="switchTab('personal')" class="flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition">
                 <i class="fa-solid fa-user mr-1"></i> 個人專區
+            </button>
+            <button id="tabStats" onclick="switchTab('stats')" class="flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition">
+                <i class="fa-solid fa-chart-pie mr-1"></i> 統計分析
             </button>
         </div>
     </header>
@@ -104,21 +107,30 @@
                 </button>
             </section>
 
+            <!-- 搜尋與日期篩選列 -->
+            <section class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex gap-2 items-center">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
+                    <input type="text" id="searchInput" oninput="renderApp()" placeholder="搜尋關鍵字..." class="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+                <div>
+                    <input type="date" id="dateFilterInput" onchange="renderApp()" class="px-2 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+                <button onclick="clearTimelineFilter()" class="text-xs text-gray-500 hover:text-gray-700 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition">清除</button>
+            </section>
+
             <!-- 時間軸列表 -->
             <section class="space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h3 class="font-bold text-gray-800 text-base">家庭動態時軸</h3>
                     <span class="text-xs text-gray-500">自動按日期關聯</span>
                 </div>
-                <div id="timelineContainer" class="space-y-4">
-                    <!-- 動態生成內容 -->
-                </div>
+                <div id="timelineContainer" class="space-y-4"></div>
             </section>
         </div>
 
         <!-- 個人專區視圖 -->
         <div id="viewPersonal" class="space-y-6 hidden">
-            <!-- 個人數據總覽卡片 -->
             <section class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-5 text-white shadow-lg">
                 <div class="flex items-center space-x-3 mb-4">
                     <span id="personalUserAvatar" class="text-3xl bg-white/20 p-2 rounded-full">👤</span>
@@ -142,12 +154,40 @@
                     </div>
                 </div>
             </section>
-
-            <!-- 個人歷史紀錄列表 -->
             <section class="space-y-4">
                 <h3 class="font-bold text-gray-800 text-base px-1">我的專屬紀錄</h3>
-                <div id="personalTimelineContainer" class="space-y-4">
-                    <!-- 動態生成內容 -->
+                <div id="personalTimelineContainer" class="space-y-4"></div>
+            </section>
+        </div>
+
+        <!-- 統計分析視圖 -->
+        <div id="viewStats" class="space-y-6 hidden">
+            <!-- 統計範圍切換按鈕 -->
+            <section class="grid grid-cols-2 gap-2 bg-gray-200 p-1 rounded-xl text-xs font-bold">
+                <button id="statsScopePublic" onclick="setStatsScope('public')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">🌐 家庭公開統計</button>
+                <button id="statsScopePersonal" onclick="setStatsScope('personal')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">🔒 個人專區統計</button>
+            </section>
+
+            <!-- 總收支摘要卡片 -->
+            <section class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <p class="text-xs text-gray-500 font-semibold">總支出</p>
+                    <p id="statsTotalExpense" class="text-xl font-extrabold text-red-600 mt-1">$0</p>
+                </div>
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <p class="text-xs text-gray-500 font-semibold">總收入</p>
+                    <p id="statsTotalIncome" class="text-xl font-extrabold text-emerald-600 mt-1">$0</p>
+                </div>
+            </section>
+
+            <!-- 分類支出比較分析 -->
+            <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-chart-pie text-primary mr-1"></i> 支出分類佔比比較</h3>
+                    <span id="statsScopeLabel" class="text-xs text-gray-400">🌐 家庭公開</span>
+                </div>
+                <div id="categoryStatsContainer" class="space-y-3">
+                    <!-- 動態帶入分類百分比進度條 -->
                 </div>
             </section>
         </div>
@@ -174,15 +214,11 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">分類</label>
-                        <select id="txCategory" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
-                            <!-- 動態帶入 -->
-                        </select>
+                        <select id="txCategory" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></select>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">付款人</label>
-                        <select id="txPayer" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
-                            <!-- 動態帶入 -->
-                        </select>
+                        <select id="txPayer" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -228,6 +264,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">心情</label>
                         <select id="diaryMood" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm">
+                            <option value="無" selected>無</option>
                             <option value="😊">😊 開心</option>
                             <option value="🎉">🎉 慶祝</option>
                             <option value="🌧️">🌧️ 鬱悶</option>
@@ -237,6 +274,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">天氣</label>
                         <select id="diaryWeather" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm">
+                            <option value="無" selected>無</option>
                             <option value="☀️ 晴天">☀️ 晴天</option>
                             <option value="☁️ 多雲">☁️ 多雲</option>
                             <option value="🌧️ 雨天">🌧️ 雨天</option>
@@ -259,27 +297,22 @@
         </div>
     </div>
 
-    <!-- ================= Modal：設定與管理 (Firebase/分類/成員) ================= -->
+    <!-- ================= Modal：設定與管理 ================= -->
     <div id="settingsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-900">⚙️ 系統設定與 Firebase 連結</h3>
+                <h3 class="text-lg font-bold text-gray-900">⚙️ 系統設定與管理</h3>
                 <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            
             <div class="space-y-6">
-                <!-- Firebase 雲端連線設定 -->
                 <div class="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 space-y-2">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-sm text-indigo-900"><i class="fa-solid fa-cloud text-indigo-600 mr-1"></i> Firebase 雲端設定</h4>
                         <span id="firebaseStatus" class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">預設 Demo 模式</span>
                     </div>
-                    <p class="text-xs text-indigo-700">貼入 Firebase Config JSON 憑證即可開啟真實跨裝置 Google 帳號同步。</p>
                     <textarea id="firebaseConfigInput" rows="3" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}' class="w-full border rounded-lg p-2 text-xs font-mono"></textarea>
                     <button onclick="saveFirebaseConfig()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold shadow-sm">儲存設定並連結</button>
                 </div>
-
-                <!-- 成員管理 -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
                     <h4 class="font-bold text-sm text-gray-800 mb-3"><i class="fa-solid fa-users text-primary mr-1"></i> 家庭成員管理</h4>
                     <div id="memberListAdmin" class="space-y-2 mb-3"></div>
@@ -289,8 +322,6 @@
                         <button type="submit" class="bg-primary text-white px-3 py-1.5 rounded-lg text-sm font-bold">新增</button>
                     </form>
                 </div>
-
-                <!-- 分類管理 -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
                     <h4 class="font-bold text-sm text-gray-800 mb-3"><i class="fa-solid fa-tags text-secondary mr-1"></i> 記帳分類管理</h4>
                     <div id="categoryListAdmin" class="space-y-2 mb-3 max-h-40 overflow-y-auto"></div>
@@ -312,9 +343,8 @@
         </div>
     </div>
 
-    <!-- JavaScript 應用程式核心邏輯 -->
+    <!-- JavaScript 核心邏輯 -->
     <script>
-        // 預設成員與分類資料
         let members = JSON.parse(localStorage.getItem('family_members')) || [
             { id: 'm1', name: '爸爸', avatar: '👨' },
             { id: 'm2', name: '媽媽', avatar: '👩' },
@@ -329,7 +359,6 @@
             { id: 'c5', name: '薪資收入', type: 'income', icon: '💰' }
         ];
 
-        // 本地 Demo 範例資料
         let transactions = JSON.parse(localStorage.getItem('family_transactions')) || [
             { id: 't1', date: getTodayStr(), type: 'expense', amount: 350, category_id: 'c1', payer_id: 'm1', note: '全家晚餐牛肉麵', visibility: 'public', userUid: 'demo1' },
             { id: 't2', date: getTodayStr(), type: 'expense', amount: 1200, category_id: 'c2', payer_id: 'm2', note: '汽車加油', visibility: 'public', userUid: 'demo2' }
@@ -339,10 +368,11 @@
             { id: 'd1', date: getTodayStr(), author_id: 'm1', title: '週末公園散步', content: '今天帶小寶去公園踢球，晚餐吃了美味牛肉麵。', mood: '😊', weather: '☀️ 晴天', visibility: 'public', userUid: 'demo1' }
         ];
 
-        let currentUser = null; // 當前 Google 登入者或 Demo 身分
+        let currentUser = null;
         let currentTab = 'timeline';
         let currentExpenseFilter = 'all';
         let currentTxType = 'expense';
+        let currentStatsScope = 'public'; // 'public' 或 'personal'
         let db = null;
         let auth = null;
 
@@ -356,7 +386,6 @@
             document.getElementById('diaryDate').value = getTodayStr();
         };
 
-        // ================= Firebase 初始化與驗證 =================
         function initFirebase() {
             const savedConfig = localStorage.getItem('firebase_config');
             if (savedConfig && window.fbModules) {
@@ -365,10 +394,8 @@
                     const app = window.fbModules.initializeApp(config);
                     auth = window.fbModules.getAuth(app);
                     db = window.fbModules.getFirestore(app);
-
                     document.getElementById('firebaseStatus').innerText = 'Cloud 已連線';
                     document.getElementById('firebaseStatus').className = 'text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold';
-
                     window.fbModules.onAuthStateChanged(auth, (user) => {
                         if (user) {
                             currentUser = {
@@ -383,11 +410,8 @@
                             updateAuthUI();
                         }
                     });
-                } catch (e) {
-                    console.error('Firebase Config 格式錯誤', e);
-                }
+                } catch (e) { console.error(e); }
             } else {
-                // 預設 Demo 使用者身分
                 currentUser = { uid: 'demo1', name: '爸爸 (Demo)', avatar: '👨' };
                 updateAuthUI();
             }
@@ -414,26 +438,17 @@
         }
 
         async function handleAuthAction() {
-            if (!auth) {
-                alert('請先在 ⚙️ 設定中設定 Firebase 憑證以啟用真實 Google 登入功能。');
-                openSettingsModal();
-                return;
-            }
+            if (!auth) { alert('請先設定 Firebase 憑證'); openSettingsModal(); return; }
             if (currentUser && auth.currentUser) {
                 await window.fbModules.signOut(auth);
             } else {
                 const provider = new window.fbModules.GoogleAuthProvider();
-                try {
-                    await window.fbModules.signInWithPopup(auth, provider);
-                } catch (e) {
-                    alert('登入失敗: ' + e.message);
-                }
+                try { await window.fbModules.signInWithPopup(auth, provider); } catch (e) { alert(e.message); }
             }
         }
 
         function listenCloudData() {
             if (!db) return;
-            // 雲端即時同步 Firebase Firestore
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'transactions'), (snap) => {
                 transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
@@ -453,129 +468,169 @@
             }
         }
 
-        // ================= 介面選單與雙分頁 =================
         function switchTab(tab) {
             currentTab = tab;
-            const tabTimeline = document.getElementById('tabTimeline');
-            const tabPersonal = document.getElementById('tabPersonal');
-            const viewTimeline = document.getElementById('viewTimeline');
-            const viewPersonal = document.getElementById('viewPersonal');
-
-            if (tab === 'timeline') {
-                tabTimeline.className = "flex-1 py-2.5 text-center text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 transition";
-                tabPersonal.className = "flex-1 py-2.5 text-center text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition";
-                viewTimeline.classList.remove('hidden');
-                viewPersonal.classList.add('hidden');
-            } else {
-                tabPersonal.className = "flex-1 py-2.5 text-center text-sm font-bold border-b-2 border-emerald-600 text-emerald-600 transition";
-                tabTimeline.className = "flex-1 py-2.5 text-center text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition";
-                viewPersonal.classList.remove('hidden');
-                viewTimeline.classList.add('hidden');
-            }
+            const tabs = ['timeline', 'personal', 'stats'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                const view = document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (t === tab) {
+                    btn.className = "flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition";
+                    view.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition";
+                    view.classList.add('hidden');
+                }
+            });
             renderApp();
         }
 
         function initFormSelects() {
-            const catSelect = document.getElementById('txCategory');
-            catSelect.innerHTML = categories.filter(c => c.type === currentTxType).map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
-
-            const payerSelect = document.getElementById('txPayer');
-            payerSelect.innerHTML = members.map(m => `<option value="${m.id}">${m.avatar} ${m.name}</option>`).join('');
+            document.getElementById('txCategory').innerHTML = categories.filter(c => c.type === currentTxType).map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+            document.getElementById('txPayer').innerHTML = members.map(m => `<option value="${m.id}">${m.avatar} ${m.name}</option>`).join('');
         }
 
         function setTxType(type) {
             currentTxType = type;
-            const expBtn = document.getElementById('typeExpense');
-            const incBtn = document.getElementById('typeIncome');
-            if (type === 'expense') {
-                expBtn.className = "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-red-600 transition";
-                incBtn.className = "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
-            } else {
-                incBtn.className = "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-emerald-600 transition";
-                expBtn.className = "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
-            }
+            document.getElementById('typeExpense').className = type === 'expense' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-red-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
+            document.getElementById('typeIncome').className = type === 'income' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-emerald-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
             initFormSelects();
         }
 
         function setExpenseFilter(filter) {
             currentExpenseFilter = filter;
             ['all', 'public', 'private'].forEach(f => {
-                const btn = document.getElementById(`filterBtn-${f}`);
-                if (f === filter) {
-                    btn.className = "py-1.5 rounded-lg bg-white text-indigo-700 shadow-sm transition";
-                } else {
-                    btn.className = "py-1.5 rounded-lg text-white hover:bg-white/10 transition";
-                }
+                document.getElementById(`filterBtn-${f}`).className = f === filter ? "py-1.5 rounded-lg bg-white text-indigo-700 shadow-sm transition" : "py-1.5 rounded-lg text-white hover:bg-white/10 transition";
             });
             renderApp();
         }
 
-        // ================= 權限過濾與動態渲染 =================
+        function setStatsScope(scope) {
+            currentStatsScope = scope;
+            const btnPublic = document.getElementById('statsScopePublic');
+            const btnPersonal = document.getElementById('statsScopePersonal');
+            const label = document.getElementById('statsScopeLabel');
+
+            if (scope === 'public') {
+                btnPublic.className = "py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition";
+                btnPersonal.className = "py-2 rounded-lg text-gray-600 hover:text-gray-900 transition";
+                label.innerText = "🌐 家庭公開";
+            } else {
+                btnPersonal.className = "py-2 rounded-lg bg-white shadow-sm text-emerald-600 transition";
+                btnPublic.className = "py-2 rounded-lg text-gray-600 hover:text-gray-900 transition";
+                label.innerText = "🔒 個人專區";
+            }
+            renderStatsView();
+        }
+
+        function clearTimelineFilter() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('dateFilterInput').value = '';
+            renderApp();
+        }
+
         function canViewItem(item) {
             if (item.visibility === 'public') return true;
             return currentUser && item.userUid === currentUser.uid;
         }
 
         function renderApp() {
-            if (currentTab === 'timeline') {
-                renderTimelineView();
-            } else {
-                renderPersonalView();
-            }
+            if (currentTab === 'timeline') renderTimelineView();
+            else if (currentTab === 'personal') renderPersonalView();
+            else if (currentTab === 'stats') renderStatsView();
         }
 
         function renderTimelineView() {
+            const keyword = document.getElementById('searchInput') ? document.getElementById('searchInput').value.trim().toLowerCase() : '';
+            const dateFilter = document.getElementById('dateFilterInput') ? document.getElementById('dateFilterInput').value : '';
+
             let filteredTx = transactions.filter(t => canViewItem(t));
             if (currentExpenseFilter === 'public') filteredTx = filteredTx.filter(t => t.visibility === 'public');
             if (currentExpenseFilter === 'private') filteredTx = filteredTx.filter(t => t.visibility === 'private');
 
+            let filteredDiaries = diaries.filter(d => canViewItem(d));
+
+            if (dateFilter) {
+                filteredTx = filteredTx.filter(t => t.date === dateFilter);
+                filteredDiaries = filteredDiaries.filter(d => d.date === dateFilter);
+            }
+            if (keyword) {
+                filteredTx = filteredTx.filter(t => (t.note || '').toLowerCase().includes(keyword) || String(t.amount).includes(keyword));
+                filteredDiaries = filteredDiaries.filter(d => (d.title || '').toLowerCase().includes(keyword) || (d.content || '').toLowerCase().includes(keyword));
+            }
+
             const totalExpense = filteredTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
             document.getElementById('totalExpenseDisplay').innerText = `$${totalExpense.toLocaleString()}`;
-            document.getElementById('recordCountDisplay').innerText = `共 ${filteredTx.length} 筆`;
+            document.getElementById('recordCountDisplay').innerText = `共 ${filteredTx.length + filteredDiaries.length} 筆`;
 
-            const allDates = new Set([
-                ...filteredTx.map(t => t.date),
-                ...diaries.filter(d => canViewItem(d)).map(d => d.date)
-            ]);
+            const allDates = new Set([...filteredTx.map(t => t.date), ...filteredDiaries.map(d => d.date)]);
             const sortedDates = Array.from(allDates).sort((a, b) => new Date(b) - new Date(a));
 
             const container = document.getElementById('timelineContainer');
-            if (sortedDates.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">沒有符合條件的動態紀錄</div>`;
-                return;
-            }
-
-            container.innerHTML = sortedDates.map(date => renderDayBlock(date, filteredTx, diaries.filter(d => canViewItem(d)))).join('');
+            container.innerHTML = sortedDates.length === 0 ? `<div class="text-center py-10 text-gray-400 text-sm">沒有符合條件的動態紀錄</div>` : sortedDates.map(date => renderDayBlock(date, filteredTx, filteredDiaries)).join('');
         }
 
         function renderPersonalView() {
             if (!currentUser) {
-                document.getElementById('personalTimelineContainer').innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">請先點擊右上角登入 Google 帳號以查看個人儀表板</div>`;
+                document.getElementById('personalTimelineContainer').innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">請先登入 Google 帳號</div>`;
                 return;
             }
-
             document.getElementById('personalUserName').innerText = `${currentUser.name} 的個人儀表板`;
-
             const myTxs = transactions.filter(t => t.userUid === currentUser.uid);
             const myDiaries = diaries.filter(d => d.userUid === currentUser.uid);
-
-            const myExpense = myTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
-            const myIncome = myTxs.filter(t => t.type === 'income').reduce((sum, t) => sum + Number(t.amount), 0);
-
-            document.getElementById('personalExpense').innerText = `$${myExpense.toLocaleString()}`;
-            document.getElementById('personalIncome').innerText = `$${myIncome.toLocaleString()}`;
+            document.getElementById('personalExpense').innerText = `$${myTxs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
+            document.getElementById('personalIncome').innerText = `$${myTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
             document.getElementById('personalDiaryCount').innerText = `${myDiaries.length} 篇`;
 
             const allDates = new Set([...myTxs.map(t => t.date), ...myDiaries.map(d => d.date)]);
             const sortedDates = Array.from(allDates).sort((a, b) => new Date(b) - new Date(a));
+            document.getElementById('personalTimelineContainer').innerHTML = sortedDates.length === 0 ? `<div class="text-center py-10 text-gray-400 text-sm">您目前還沒有建立個人紀錄</div>` : sortedDates.map(date => renderDayBlock(date, myTxs, myDiaries)).join('');
+        }
 
-            const container = document.getElementById('personalTimelineContainer');
-            if (sortedDates.length === 0) {
-                container.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">您目前還沒有建立個人紀錄</div>`;
-                return;
+        // ================= 統計分析檢視邏輯 =================
+        function renderStatsView() {
+            let targetTxs = [];
+            if (currentStatsScope === 'public') {
+                targetTxs = transactions.filter(t => t.visibility === 'public');
+            } else {
+                if (!currentUser) {
+                    document.getElementById('categoryStatsContainer').innerHTML = `<p class="text-center text-xs text-gray-400 py-4">請先登入帳號以查看個人專區統計</p>`;
+                    document.getElementById('statsTotalExpense').innerText = '$0';
+                    document.getElementById('statsTotalIncome').innerText = '$0';
+                    return;
+                }
+                targetTxs = transactions.filter(t => t.userUid === currentUser.uid);
             }
 
-            container.innerHTML = sortedDates.map(date => renderDayBlock(date, myTxs, myDiaries)).join('');
+            const totalExp = targetTxs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+            const totalInc = targetTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+
+            document.getElementById('statsTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
+            document.getElementById('statsTotalIncome').innerText = `$${totalInc.toLocaleString()}`;
+
+            // 分類支出統計進度條
+            const expCategories = categories.filter(c => c.type === 'expense');
+            const catContainer = document.getElementById('categoryStatsContainer');
+            
+            if (totalExp === 0) {
+                catContainer.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">尚無支出數據可供統計</p>`;
+            } else {
+                catContainer.innerHTML = expCategories.map(cat => {
+                    const catSum = targetTxs.filter(t => t.type === 'expense' && t.category_id === cat.id).reduce((s, t) => s + Number(t.amount), 0);
+                    const percent = totalExp > 0 ? ((catSum / totalExp) * 100).toFixed(1) : 0;
+                    return `
+                        <div class="space-y-1">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-bold text-gray-700">${cat.icon} ${cat.name}</span>
+                                <span class="font-bold text-gray-900">$${catSum.toLocaleString()} <span class="text-gray-400 font-normal">(${percent}%)</span></span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                <div class="bg-primary h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
         }
 
         function renderDayBlock(date, txList, diaryList) {
@@ -583,37 +638,32 @@
             const dayTxs = txList.filter(t => t.date === date);
             const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
 
-            let html = `
-                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
-                    <div class="flex justify-between items-center border-b pb-2">
-                        <span class="font-bold text-sm text-indigo-600"><i class="fa-regular fa-calendar-days mr-1"></i> ${date}</span>
-                        <span class="text-xs text-gray-500 font-medium">當日支出: <strong class="text-red-500">$${dayExpense.toLocaleString()}</strong></span>
-                    </div>
-            `;
+            let html = `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <span class="font-bold text-sm text-indigo-600"><i class="fa-regular fa-calendar-days mr-1"></i> ${date}</span>
+                    <span class="text-xs text-gray-500 font-medium">當日支出: <strong class="text-red-500">$${dayExpense.toLocaleString()}</strong></span>
+                </div>`;
 
             dayDiaries.forEach(d => {
                 const author = members.find(m => m.id === d.author_id) || { name: '成員', avatar: '👤' };
                 const isOwner = currentUser && d.userUid === currentUser.uid;
-                html += `
-                    <div class="bg-amber-50/60 border border-amber-100 rounded-xl p-3.5 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-xl">${d.mood}</span>
-                                <div>
-                                    <h4 class="font-bold text-sm text-gray-900">${d.title}</h4>
-                                    <p class="text-xs text-gray-500">${author.avatar} ${author.name} · ${d.weather} ${d.visibility === 'private' ? '🔒 私密' : '🌐 公開'}</p>
-                                </div>
+                const moodDisplay = (d.mood && d.mood !== '無') ? d.mood : '';
+                const weatherDisplay = (d.weather && d.weather !== '無') ? d.weather : '';
+                const metaInfo = [weatherDisplay, d.visibility === 'private' ? '🔒 私密' : '🌐 公開'].filter(Boolean).join(' · ');
+
+                html += `<div class="bg-amber-50/60 border border-amber-100 rounded-xl p-3.5 space-y-2">
+                    <div class="flex justify-between items-start">
+                        <div class="flex items-center space-x-2">
+                            ${moodDisplay ? `<span class="text-xl">${moodDisplay}</span>` : ''}
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-900">${d.title}</h4>
+                                <p class="text-xs text-gray-500">${author.avatar} ${author.name}${metaInfo ? ' · ' + metaInfo : ''}</p>
                             </div>
-                            ${isOwner ? `
-                                <div class="flex space-x-1">
-                                    <button onclick="editDiary('${d.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
-                                    <button onclick="deleteDiary('${d.id}')" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
-                                </div>
-                            ` : ''}
                         </div>
-                        <p class="text-xs text-gray-700 whitespace-pre-line leading-relaxed">${d.content}</p>
+                        ${isOwner ? `<div class="flex space-x-1"><button onclick="editDiary('${d.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button><button onclick="deleteDiary('${d.id}')" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button></div>` : ''}
                     </div>
-                `;
+                    <p class="text-xs text-gray-700 whitespace-pre-line leading-relaxed">${d.content}</p>
+                </div>`;
             });
 
             if (dayTxs.length > 0) {
@@ -623,35 +673,27 @@
                     const payer = members.find(m => m.id === t.payer_id) || { name: '成員', avatar: '👤' };
                     const isExpense = t.type === 'expense';
                     const isOwner = currentUser && t.userUid === currentUser.uid;
-                    html += `
-                        <div class="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-2.5 rounded-xl transition text-xs">
-                            <div class="flex items-center space-x-2.5">
-                                <span class="text-base bg-white p-1.5 rounded-lg shadow-xs">${cat.icon}</span>
-                                <div>
-                                    <p class="font-bold text-gray-800">${t.note || cat.name}</p>
-                                    <p class="text-[10px] text-gray-500">${payer.avatar} ${payer.name} · ${cat.name} ${t.visibility === 'private' ? '🔒' : ''}</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <span class="font-extrabold ${isExpense ? 'text-gray-900' : 'text-emerald-600'}">
-                                    ${isExpense ? '-' : '+'}$${Number(t.amount).toLocaleString()}
-                                </span>
-                                ${isOwner ? `
-                                    <button onclick="editTransaction('${t.id}')" class="text-gray-400 hover:text-indigo-600 p-1"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                                    <button onclick="deleteTransaction('${t.id}')" class="text-gray-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash text-[10px]"></i></button>
-                                ` : ''}
+                    html += `<div class="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-2.5 rounded-xl transition text-xs">
+                        <div class="flex items-center space-x-2.5">
+                            <span class="text-base bg-white p-1.5 rounded-lg shadow-xs">${cat.icon}</span>
+                            <div>
+                                <p class="font-bold text-gray-800">${t.note || cat.name}</p>
+                                <p class="text-[10px] text-gray-500">${payer.avatar} ${payer.name} · ${cat.name} ${t.visibility === 'private' ? '🔒' : ''}</p>
                             </div>
                         </div>
-                    `;
+                        <div class="flex items-center space-x-2">
+                            <span class="font-extrabold ${isExpense ? 'text-gray-900' : 'text-emerald-600'}">${isExpense ? '-' : '+'}$${Number(t.amount).toLocaleString()}</span>
+                            ${isOwner ? `<button onclick="editTransaction('${t.id}')" class="text-gray-400 hover:text-indigo-600 p-1"><i class="fa-solid fa-pen text-[10px]"></i></button><button onclick="deleteTransaction('${t.id}')" class="text-gray-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash text-[10px]"></i></button>` : ''}
+                        </div>
+                    </div>`;
                 });
                 html += `</div>`;
             }
-
             html += `</div>`;
             return html;
         }
 
-        // ================= 記帳 CRUD =================
+        // ================= CRUD 與管理功能 =================
         function openTransactionModal(txId = null) {
             document.getElementById('transactionModal').classList.remove('hidden');
             if (txId) {
@@ -688,13 +730,9 @@
                 note: document.getElementById('txNote').value,
                 userUid: currentUser ? currentUser.uid : 'demo1'
             };
-
             if (db) {
-                if (id) {
-                    await window.fbModules.updateDoc(window.fbModules.doc(db, 'transactions', id), data);
-                } else {
-                    await window.fbModules.addDoc(window.fbModules.collection(db, 'transactions'), data);
-                }
+                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'transactions', id), data);
+                else await window.fbModules.addDoc(window.fbModules.collection(db, 'transactions'), data);
             } else {
                 if (id) {
                     const idx = transactions.findIndex(x => x.id === id);
@@ -711,17 +749,11 @@
         function editTransaction(id) { openTransactionModal(id); }
         async function deleteTransaction(id) {
             if (confirm('確定要刪除這筆記帳嗎？')) {
-                if (db) {
-                    await window.fbModules.deleteDoc(window.fbModules.doc(db, 'transactions', id));
-                } else {
-                    transactions = transactions.filter(t => t.id !== id);
-                    saveData();
-                    renderApp();
-                }
+                if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'transactions', id));
+                else { transactions = transactions.filter(t => t.id !== id); saveData(); renderApp(); }
             }
         }
 
-        // ================= 日記 CRUD =================
         function openDiaryModal(diaryId = null) {
             document.getElementById('diaryModal').classList.remove('hidden');
             if (diaryId) {
@@ -730,14 +762,16 @@
                 document.getElementById('diaryId').value = d.id;
                 document.getElementById('diaryDate').value = d.date;
                 document.getElementById('diaryTitle').value = d.title;
-                document.getElementById('diaryMood').value = d.mood;
-                document.getElementById('diaryWeather').value = d.weather;
+                document.getElementById('diaryMood').value = d.mood || '無';
+                document.getElementById('diaryWeather').value = d.weather || '無';
                 document.getElementById('diaryVisibility').value = d.visibility;
                 document.getElementById('diaryContent').value = d.content;
             } else {
                 document.getElementById('diaryModalTitle').innerText = '寫家庭日記';
                 document.getElementById('diaryForm').reset();
                 document.getElementById('diaryId').value = '';
+                document.getElementById('diaryMood').value = '無';
+                document.getElementById('diaryWeather').value = '無';
                 document.getElementById('diaryDate').value = getTodayStr();
             }
         }
@@ -756,13 +790,9 @@
                 content: document.getElementById('diaryContent').value,
                 userUid: currentUser ? currentUser.uid : 'demo1'
             };
-
             if (db) {
-                if (id) {
-                    await window.fbModules.updateDoc(window.fbModules.doc(db, 'diaries', id), data);
-                } else {
-                    await window.fbModules.addDoc(window.fbModules.collection(db, 'diaries'), data);
-                }
+                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'diaries', id), data);
+                else await window.fbModules.addDoc(window.fbModules.collection(db, 'diaries'), data);
             } else {
                 if (id) {
                     const idx = diaries.findIndex(x => x.id === id);
@@ -779,21 +809,12 @@
         function editDiary(id) { openDiaryModal(id); }
         async function deleteDiary(id) {
             if (confirm('確定要刪除這篇日記嗎？')) {
-                if (db) {
-                    await window.fbModules.deleteDoc(window.fbModules.doc(db, 'diaries', id));
-                } else {
-                    diaries = diaries.filter(d => d.id !== id);
-                    saveData();
-                    renderApp();
-                }
+                if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'diaries', id));
+                else { diaries = diaries.filter(d => d.id !== id); saveData(); renderApp(); }
             }
         }
 
-        // ================= 設定與管理 =================
-        function openSettingsModal() {
-            document.getElementById('settingsModal').classList.remove('hidden');
-            renderAdminLists();
-        }
+        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); renderAdminLists(); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); initFormSelects(); renderApp(); }
 
         function saveFirebaseConfig() {
@@ -802,27 +823,27 @@
             try {
                 JSON.parse(raw);
                 localStorage.setItem('firebase_config', raw);
-                alert('Firebase 設定儲存成功！將重新載入網頁連線。');
+                alert('Firebase 設定儲存成功！將重新載入');
                 location.reload();
-            } catch (e) {
-                alert('JSON 格式不正確，請確認複製的 Firebase Config 設定檔。');
-            }
+            } catch (e) { alert('JSON 格式錯誤'); }
         }
 
         function renderAdminLists() {
-            const mList = document.getElementById('memberListAdmin');
-            mList.innerHTML = members.map(m => `
-                <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
-                    <span>${m.avatar} ${m.name}</span>
-                    <button onclick="deleteMember('${m.id}')" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+            document.getElementById('memberListAdmin').innerHTML = members.map(m => `
+                <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs gap-2">
+                    <span class="w-8 text-center text-base">${m.avatar}</span>
+                    <span class="font-bold flex-1 truncate">${m.name}</span>
+                    <button onclick="editMemberPrompt('${m.id}')" class="text-indigo-600 px-2 py-1"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteMember('${m.id}')" class="text-red-500 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `).join('');
 
-            const cList = document.getElementById('categoryListAdmin');
-            cList.innerHTML = categories.map(c => `
-                <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
-                    <span>${c.icon} ${c.name} <span class="text-gray-400">(${c.type === 'expense' ? '支出' : '收入'})</span></span>
-                    <button onclick="deleteCategory('${c.id}')" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+            document.getElementById('categoryListAdmin').innerHTML = categories.map(c => `
+                <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs gap-2">
+                    <span class="w-8 text-center text-base">${c.icon}</span>
+                    <span class="font-bold flex-1 truncate">${c.name} <span class="text-gray-400 font-normal">(${c.type === 'expense' ? '支出' : '收入'})</span></span>
+                    <button onclick="editCategoryPrompt('${c.id}')" class="text-indigo-600 px-2 py-1"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteCategory('${c.id}')" class="text-red-500 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `).join('');
         }
@@ -831,19 +852,20 @@
             e.preventDefault();
             const name = document.getElementById('newMemberName').value.trim();
             const avatar = document.getElementById('newMemberAvatar').value.trim() || '👤';
-            if (name) {
-                members.push({ id: 'm_' + Date.now(), name, avatar });
-                saveData();
-                document.getElementById('newMemberName').value = '';
-                renderAdminLists();
-            }
+            if (name) { members.push({ id: 'm_' + Date.now(), name, avatar }); saveData(); document.getElementById('newMemberName').value = ''; renderAdminLists(); }
         }
-
+        function editMemberPrompt(id) {
+            const m = members.find(x => x.id === id);
+            if (!m) return;
+            const newName = prompt('修改成員名稱：', m.name);
+            if (newName === null) return;
+            const newAvatar = prompt('修改成員圖示 (Emoji)：', m.avatar);
+            if (newAvatar === null) return;
+            if (newName.trim()) { m.name = newName.trim(); m.avatar = newAvatar.trim() || m.avatar; saveData(); renderAdminLists(); }
+        }
         function deleteMember(id) {
             if (members.length <= 1) { alert('至少需保留一位成員'); return; }
-            members = members.filter(m => m.id !== id);
-            saveData();
-            renderAdminLists();
+            members = members.filter(m => m.id !== id); saveData(); renderAdminLists();
         }
 
         function addCategory(e) {
@@ -851,18 +873,19 @@
             const name = document.getElementById('newCategoryName').value.trim();
             const icon = document.getElementById('newCategoryIcon').value.trim() || '📌';
             const type = document.getElementById('newCategoryType').value;
-            if (name) {
-                categories.push({ id: 'c_' + Date.now(), name, type, icon });
-                saveData();
-                document.getElementById('newCategoryName').value = '';
-                renderAdminLists();
-            }
+            if (name) { categories.push({ id: 'c_' + Date.now(), name, type, icon }); saveData(); document.getElementById('newCategoryName').value = ''; renderAdminLists(); }
         }
-
+        function editCategoryPrompt(id) {
+            const c = categories.find(x => x.id === id);
+            if (!c) return;
+            const newName = prompt('修改分類名稱：', c.name);
+            if (newName === null) return;
+            const newIcon = prompt('修改分類圖示 (Icon)：', c.icon);
+            if (newIcon === null) return;
+            if (newName.trim()) { c.name = newName.trim(); c.icon = newIcon.trim() || c.icon; saveData(); renderAdminLists(); }
+        }
         function deleteCategory(id) {
-            categories = categories.filter(c => c.id !== id);
-            saveData();
-            renderAdminLists();
+            categories = categories.filter(c => c.id !== id); saveData(); renderAdminLists();
         }
     </script>
 </body>
