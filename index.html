@@ -76,7 +76,7 @@
     <!-- 主要內容區 -->
     <main class="max-w-md mx-auto px-4 pt-4 space-y-6">
 
-        <!-- 頂部即將到期事件提醒橫幅 (位在首頁標題與分頁按鈕下方) -->
+        <!-- 頂部即將到期事件提醒橫幅 -->
         <section id="topReminderBanner" class="hidden">
             <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 shadow-sm space-y-2">
                 <div class="flex justify-between items-center">
@@ -229,15 +229,13 @@
             </section>
         </div>
 
-        <!-- 統計分析視圖 (已新增日期區間選擇) -->
+        <!-- 統計分析視圖 -->
         <div id="viewStats" class="space-y-6 hidden">
-            <!-- 範圍與權限切換 -->
             <section class="grid grid-cols-2 gap-2 bg-gray-200 p-1 rounded-xl text-xs font-bold">
                 <button id="statsScopePublic" onclick="setStatsScope('public')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">🌐 家庭公開統計</button>
                 <button id="statsScopePersonal" onclick="setStatsScope('personal')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">🔒 個人專區統計</button>
             </section>
 
-            <!-- 自由日期區間篩選面板 -->
             <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-gray-800 text-xs flex items-center gap-1">
@@ -306,7 +304,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">付款人</label>
-                        <select id="txPayer" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></select>
+                        <select id="txPayer" onchange="handlePayerChange('tx')" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -418,7 +416,7 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-600 mb-1">預設付款人</label>
-                        <select id="recTxPayer" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></select>
+                        <select id="recTxPayer" onchange="handlePayerChange('rectx')" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></select>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2">
@@ -692,7 +690,6 @@
             initFirebase();
             initFormSelects();
             
-            // 初始化統計分析日期預設為本月
             const monthRange = getThisMonthRange();
             document.getElementById('statsStartDate').value = monthRange.start;
             document.getElementById('statsEndDate').value = monthRange.end;
@@ -837,11 +834,28 @@
         }
 
         function initFormSelects() {
+            const payerOptions = `<option value="">-- 不設定 --</option>` + members.map(m => `<option value="${m.id}">${m.avatar} ${m.name}</option>`).join('');
+            
             document.getElementById('txCategory').innerHTML = categories.filter(c => c.type === currentTxType).map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
-            document.getElementById('txPayer').innerHTML = members.map(m => `<option value="${m.id}">${m.avatar} ${m.name}</option>`).join('');
+            document.getElementById('txPayer').innerHTML = payerOptions;
             
             document.getElementById('recTxCategory').innerHTML = categories.filter(c => c.type === currentRecTxType).map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
-            document.getElementById('recTxPayer').innerHTML = members.map(m => `<option value="${m.id}">${m.avatar} ${m.name}</option>`).join('');
+            document.getElementById('recTxPayer').innerHTML = payerOptions;
+        }
+
+        // 處理付款人變更：若選「不設定」則強迫瀏覽權限為公開並停用
+        function handlePayerChange(formType) {
+            const payerId = document.getElementById(formType === 'tx' ? 'txPayer' : 'recTxPayer').value;
+            const visSelect = document.getElementById(formType === 'tx' ? 'txVisibility' : 'recTxVisibility');
+
+            if (!payerId) {
+                visSelect.value = 'public';
+                visSelect.disabled = true;
+                visSelect.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+            } else {
+                visSelect.disabled = false;
+                visSelect.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+            }
         }
 
         function setTxType(type) {
@@ -1064,7 +1078,7 @@
             } else {
                 recTxContainer.innerHTML = visibleRecTxs.map(rt => {
                     const cat = categories.find(c => c.id === rt.category_id) || { name: '其他', icon: '📌' };
-                    const payer = members.find(m => m.id === rt.payer_id) || { name: '成員', avatar: '👤' };
+                    const payer = members.find(m => m.id === rt.payer_id) || { name: '不設定', avatar: '📌' };
                     const isDue = rt.nextDate <= today;
                     const isOwner = currentUser && rt.userUid === currentUser.uid;
                     const isPrivate = rt.visibility === 'private';
@@ -1079,7 +1093,7 @@
                                             ${rt.note || cat.name}
                                             ${isPrivate ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md font-normal">🔒 私密</span>' : ''}
                                         </h4>
-                                        <p class="text-xs text-gray-500">${payer.avatar} ${payer.name} · 週期：<strong class="text-indigo-600">${freqMap[rt.frequency]}</strong></p>
+                                        <p class="text-xs text-gray-500">${rt.payer_id ? payer.avatar + ' ' + payer.name : '👤 不設定'} · 週期：<strong class="text-indigo-600">${freqMap[rt.frequency]}</strong></p>
                                     </div>
                                 </div>
                                 <div class="text-right">
@@ -1205,7 +1219,7 @@
                 type: rt.type,
                 amount: rt.amount,
                 category_id: rt.category_id,
-                payer_id: rt.payer_id,
+                payer_id: rt.payer_id || '',
                 date: rt.nextDate,
                 visibility: rt.visibility || 'public',
                 tag: 'normal',
@@ -1247,7 +1261,6 @@
                 targetTxs = transactions.filter(t => t.userUid === currentUser.uid);
             }
 
-            // 套用日期區間篩選
             const startDate = document.getElementById('statsStartDate').value;
             const endDate = document.getElementById('statsEndDate').value;
 
@@ -1325,17 +1338,18 @@
                 html += `<div class="space-y-1.5 pt-1">`;
                 dayTxs.forEach(t => {
                     const cat = categories.find(c => c.id === t.category_id) || { name: '其他', icon: '📌' };
-                    const payer = members.find(m => m.id === t.payer_id) || { name: '成員', avatar: '👤' };
+                    const payer = members.find(m => m.id === t.payer_id) || { name: '不設定', avatar: '📌' };
                     const isExpense = t.type === 'expense';
                     const isOwner = currentUser && t.userUid === currentUser.uid;
                     const isReimburse = t.tag === 'reimburse';
+                    const payerText = t.payer_id ? `${payer.avatar} ${payer.name}` : `👤 不設定`;
 
                     html += `<div class="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-2.5 rounded-xl transition text-xs">
                         <div class="flex items-center space-x-2.5">
                             <span class="text-base bg-white p-1.5 rounded-lg shadow-xs">${cat.icon}</span>
                             <div>
                                 <p class="font-bold text-gray-800">${t.note || cat.name}</p>
-                                <p class="text-[10px] text-gray-500">${payer.avatar} ${payer.name} · ${cat.name} ${t.visibility === 'private' ? '🔒' : ''} ${isReimburse ? '<span class="text-purple-600 font-bold ml-1">🏷️ 報帳</span>' : ''}</p>
+                                <p class="text-[10px] text-gray-500">${payerText} · ${cat.name} ${t.visibility === 'private' ? '🔒' : ''} ${isReimburse ? '<span class="text-purple-600 font-bold ml-1">🏷️ 報帳</span>' : ''}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -1360,7 +1374,8 @@
                 setTxType(t.type);
                 document.getElementById('txAmount').value = t.amount;
                 document.getElementById('txCategory').value = t.category_id;
-                document.getElementById('txPayer').value = t.payer_id;
+                document.getElementById('txPayer').value = t.payer_id || '';
+                handlePayerChange('tx');
                 document.getElementById('txDate').value = t.date;
                 document.getElementById('txVisibility').value = t.visibility;
                 document.getElementById('txTag').value = t.tag || 'normal';
@@ -1370,6 +1385,8 @@
                 document.getElementById('transactionForm').reset();
                 document.getElementById('txId').value = '';
                 setTxType('expense');
+                document.getElementById('txPayer').value = '';
+                handlePayerChange('tx');
                 document.getElementById('txDate').value = getTodayStr();
                 document.getElementById('txTag').value = 'normal';
             }
@@ -1379,13 +1396,16 @@
         async function saveTransaction(e) {
             e.preventDefault();
             const id = document.getElementById('txId').value;
+            const payerId = document.getElementById('txPayer').value;
+            const vis = payerId ? document.getElementById('txVisibility').value : 'public';
+
             const data = {
                 type: currentTxType,
                 amount: Number(document.getElementById('txAmount').value),
                 category_id: document.getElementById('txCategory').value,
-                payer_id: document.getElementById('txPayer').value,
+                payer_id: payerId,
                 date: document.getElementById('txDate').value,
-                visibility: document.getElementById('txVisibility').value,
+                visibility: vis,
                 tag: document.getElementById('txTag').value,
                 note: document.getElementById('txNote').value,
                 userUid: currentUser ? currentUser.uid : 'demo1'
@@ -1484,7 +1504,8 @@
                 setRecTxType(item.type);
                 document.getElementById('recTxAmount').value = item.amount;
                 document.getElementById('recTxCategory').value = item.category_id;
-                document.getElementById('recTxPayer').value = item.payer_id;
+                document.getElementById('recTxPayer').value = item.payer_id || '';
+                handlePayerChange('rectx');
                 document.getElementById('recTxFrequency').value = item.frequency;
                 document.getElementById('recTxNextDate').value = item.nextDate;
                 document.getElementById('recTxVisibility').value = item.visibility || 'public';
@@ -1494,6 +1515,8 @@
                 document.getElementById('recurringTxForm').reset();
                 document.getElementById('recTxId').value = '';
                 setRecTxType('expense');
+                document.getElementById('recTxPayer').value = '';
+                handlePayerChange('rectx');
                 document.getElementById('recTxNextDate').value = getTodayStr();
                 document.getElementById('recTxVisibility').value = 'public';
             }
@@ -1503,14 +1526,17 @@
         async function saveRecurringTx(e) {
             e.preventDefault();
             const id = document.getElementById('recTxId').value;
+            const payerId = document.getElementById('recTxPayer').value;
+            const vis = payerId ? document.getElementById('recTxVisibility').value : 'public';
+
             const data = {
                 type: currentRecTxType,
                 amount: Number(document.getElementById('recTxAmount').value),
                 category_id: document.getElementById('recTxCategory').value,
-                payer_id: document.getElementById('recTxPayer').value,
+                payer_id: payerId,
                 frequency: document.getElementById('recTxFrequency').value,
                 nextDate: document.getElementById('recTxNextDate').value,
-                visibility: document.getElementById('recTxVisibility').value,
+                visibility: vis,
                 note: document.getElementById('recTxNote').value,
                 userUid: currentUser ? currentUser.uid : 'demo1'
             };
@@ -1699,13 +1725,14 @@
 
             transactions.forEach(t => {
                 const cat = categories.find(c => c.id === t.category_id) || { name: '其他' };
-                const payer = members.find(m => m.id === t.payer_id) || { name: '成員' };
+                const payer = members.find(m => m.id === t.payer_id) || { name: '不設定' };
                 const typeName = t.type === 'expense' ? '支出' : '收入';
                 const visName = t.visibility === 'private' ? '私密' : '公開';
                 const tag = t.tag === 'reimburse' ? '報帳' : '一般';
                 const noteClean = `"${(t.note || '').replace(/"/g, '""')}"`;
+                const payerName = t.payer_id ? payer.name : '不設定';
 
-                csv += `${t.date},${typeName},${t.amount},"${cat.name}","${payer.name}",${visName},${tag},${noteClean}\n`;
+                csv += `${t.date},${typeName},${t.amount},"${cat.name}","${payerName}",${visName},${tag},${noteClean}\n`;
             });
 
             downloadFile(csv, `家庭記帳紀錄_${getTodayStr()}.csv`, 'text/csv;charset=utf-8;');
