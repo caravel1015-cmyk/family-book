@@ -703,10 +703,19 @@
         };
 
         function initFirebase() {
-            const savedConfig = localStorage.getItem('firebase_config');
-            if (savedConfig && window.fbModules) {
+            // 直接在這裡寫入您的 Firebase 設定，免去手動輸入
+            const config = {
+                apiKey: "AIzaSyCXPd4szEQPC9QTVMhNmG6Di3c_plFo0lg",
+                authDomain: "family-book-777f6.firebaseapp.com",
+                projectId: "family-book-777f6",
+                storageBucket: "family-book-777f6.firebasestorage.app",
+                messagingSenderId: "976672338349",
+                appId: "1:976672338349:web:c304d0c62b5b9257d37124",
+                measurementId: "G-X8Z1G5ZSEF"
+            };
+
+            if (window.fbModules) {
                 try {
-                    const config = JSON.parse(savedConfig);
                     const app = window.fbModules.initializeApp(config);
                     auth = window.fbModules.getAuth(app);
                     db = window.fbModules.getFirestore(app);
@@ -835,7 +844,6 @@
 
         function getDefaultPayerId() {
             if (!currentUser) return members[0] ? members[0].id : '';
-            // 嘗試透過名稱配對成員
             const matched = members.find(m => currentUser.name && m.name.includes(currentUser.name.replace(/ \(Demo\)/, '')));
             if (matched) return matched.id;
             return members[0] ? members[0].id : '';
