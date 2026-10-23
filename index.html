@@ -856,8 +856,25 @@
             renderRecurringView();
         }
 
+        // ================= 【調整重點】強健化預設付款人邏輯 =================
         function getDefaultPayerId() {
-            if (currentUser && currentUser.memberId) return currentUser.memberId;
+            // 1. 若目前登入者有明確的 memberId 且存在於成員中，優先採用
+            if (currentUser && currentUser.memberId) {
+                const m = members.find(x => x.id === currentUser.memberId);
+                if (m) return m.id;
+            }
+            // 2. 若有 Firebase 登入狀態，嘗試用 Email 反查對應成員 ID
+            if (auth && auth.currentUser && auth.currentUser.email) {
+                const email = auth.currentUser.email.toLowerCase().trim();
+                const m = members.find(x => x.email && x.email.toLowerCase().trim() === email);
+                if (m) return m.id;
+            }
+            // 3. 嘗試用登入名稱對應
+            if (currentUser && currentUser.name) {
+                const m = members.find(x => x.name === currentUser.name);
+                if (m) return m.id;
+            }
+            // 4. 若皆無，退回第一位成員
             return members[0] ? members[0].id : '';
         }
 
@@ -1487,7 +1504,26 @@
         async function saveDiary(e) {
             e.preventDefault();
             const id = document.getElementById('diaryId').value;
-            const authorId = currentUser && currentUser.memberId ? currentUser.memberId : (members[0] ? members[0].id : 'm1');
+            
+            // ================= 【調整重點】強健化日記作者對應邏輯 =================
+            let authorId = '';
+            if (currentUser && currentUser.memberId) {
+                const m = members.find(x => x.id === currentUser.memberId);
+                if (m) authorId = m.id;
+            }
+            if (!authorId && auth && auth.currentUser && auth.currentUser.email) {
+                const email = auth.currentUser.email.toLowerCase().trim();
+                const m = members.find(x => x.email && x.email.toLowerCase().trim() === email);
+                if (m) authorId = m.id;
+            }
+            if (!authorId && currentUser && currentUser.name) {
+                const m = members.find(x => x.name === currentUser.name);
+                if (m) authorId = m.id;
+            }
+            if (!authorId) {
+                authorId = members[0] ? members[0].id : 'm1';
+            }
+
             const data = {
                 date: document.getElementById('diaryDate').value,
                 author_id: authorId,
