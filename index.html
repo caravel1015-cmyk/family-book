@@ -571,24 +571,20 @@
                     </div>
                 </div>
 
-                <!-- Firebase 設定 -->
-                <div class="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-sm text-indigo-900"><i class="fa-solid fa-cloud text-indigo-600 mr-1"></i> Firebase 雲端設定</h4>
-                        <span id="firebaseStatus" class="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">預設 Demo 模式</span>
-                    </div>
-                    <textarea id="firebaseConfigInput" rows="3" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}' class="w-full border rounded-lg p-2 text-xs font-mono"></textarea>
-                    <button onclick="saveFirebaseConfig()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold shadow-sm">儲存設定並連結</button>
-                </div>
-
                 <!-- 成員管理 -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
-                    <h4 class="font-bold text-sm text-gray-800 mb-3"><i class="fa-solid fa-users text-primary mr-1"></i> 家庭成員管理</h4>
+                    <h4 class="font-bold text-sm text-gray-800 mb-1"><i class="fa-solid fa-users text-primary mr-1"></i> 家庭成員與 Google 權限管理</h4>
+                    <p class="text-[11px] text-gray-500 mb-3">填寫成員對應的 Google Email，即可自動對應身分並完成登入授權。</p>
                     <div id="memberListAdmin" class="space-y-2 mb-3"></div>
-                    <form onsubmit="addMember(event)" class="flex gap-2">
-                        <input type="text" id="newMemberName" placeholder="成員名稱" required class="flex-1 border rounded-lg px-3 py-1.5 text-sm">
-                        <input type="text" id="newMemberAvatar" placeholder="Emoji" value="👤" class="w-16 border rounded-lg px-2 py-1.5 text-sm text-center">
-                        <button type="submit" class="bg-primary text-white px-3 py-1.5 rounded-lg text-sm font-bold">新增</button>
+                    <form onsubmit="addMember(event)" class="space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="newMemberName" placeholder="成員名稱 (如：爸爸)" required class="flex-1 border rounded-lg px-3 py-1.5 text-xs">
+                            <input type="text" id="newMemberAvatar" placeholder="Emoji" value="👨" class="w-16 border rounded-lg px-2 py-1.5 text-xs text-center">
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="email" id="newMemberEmail" placeholder="對應的 Google Email" class="flex-1 border rounded-lg px-3 py-1.5 text-xs">
+                            <button type="submit" class="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap">新增成員</button>
+                        </div>
                     </form>
                 </div>
 
@@ -598,15 +594,15 @@
                     <div id="categoryListAdmin" class="space-y-2 mb-3 max-h-40 overflow-y-auto"></div>
                     <form onsubmit="addCategory(event)" class="space-y-2">
                         <div class="flex gap-2">
-                            <input type="text" id="newCategoryName" placeholder="分類名稱" required class="flex-1 border rounded-lg px-3 py-1.5 text-sm">
-                            <input type="text" id="newCategoryIcon" placeholder="Icon" value="🍔" class="w-16 border rounded-lg px-2 py-1.5 text-sm text-center">
+                            <input type="text" id="newCategoryName" placeholder="分類名稱" required class="flex-1 border rounded-lg px-3 py-1.5 text-xs">
+                            <input type="text" id="newCategoryIcon" placeholder="Icon" value="🍔" class="w-16 border rounded-lg px-2 py-1.5 text-xs text-center">
                         </div>
                         <div class="flex gap-2">
-                            <select id="newCategoryType" class="flex-1 border rounded-lg px-3 py-1.5 text-sm">
+                            <select id="newCategoryType" class="flex-1 border rounded-lg px-3 py-1.5 text-xs">
                                 <option value="expense">支出分類</option>
                                 <option value="income">收入分類</option>
                             </select>
-                            <button type="submit" class="bg-secondary text-white px-4 py-1.5 rounded-lg text-sm font-bold">新增分類</button>
+                            <button type="submit" class="bg-secondary text-white px-4 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap">新增分類</button>
                         </div>
                     </form>
                 </div>
@@ -617,9 +613,9 @@
     <!-- JavaScript 核心邏輯 -->
     <script>
         let members = JSON.parse(localStorage.getItem('family_members')) || [
-            { id: 'm1', name: '爸爸', avatar: '👨' },
-            { id: 'm2', name: '媽媽', avatar: '👩' },
-            { id: 'm3', name: '小寶', avatar: '👦' }
+            { id: 'm1', name: '爸爸', avatar: '👨', email: '' },
+            { id: 'm2', name: '媽媽', avatar: '👩', email: '' },
+            { id: 'm3', name: '小寶', avatar: '👦', email: '' }
         ];
 
         let categories = JSON.parse(localStorage.getItem('family_categories')) || [
@@ -703,7 +699,6 @@
         };
 
         function initFirebase() {
-            // 直接在這裡寫入您的 Firebase 設定，免去手動輸入
             const config = {
                 apiKey: "AIzaSyCXPd4szEQPC9QTVMhNmG6Di3c_plFo0lg",
                 authDomain: "family-book-777f6.firebaseapp.com",
@@ -719,14 +714,33 @@
                     const app = window.fbModules.initializeApp(config);
                     auth = window.fbModules.getAuth(app);
                     db = window.fbModules.getFirestore(app);
-                    document.getElementById('firebaseStatus').innerText = 'Cloud 已連線';
-                    document.getElementById('firebaseStatus').className = 'text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold';
-                    window.fbModules.onAuthStateChanged(auth, (user) => {
+
+                    window.fbModules.onAuthStateChanged(auth, async (user) => {
                         if (user) {
+                            const userEmail = (user.email || '').toLowerCase().trim();
+                            // 檢查名單中有填寫 Email 的成員
+                            const allowedMembersWithEmail = members.filter(m => m.email && m.email.trim());
+
+                            // 比對是否有允許的信箱
+                            let matchedMember = members.find(m => m.email && m.email.toLowerCase().trim() === userEmail);
+
+                            // 如果整個家庭名單都還沒設定任何 Email，則暫時放行（以名字匹配）
+                            if (!matchedMember && allowedMembersWithEmail.length === 0) {
+                                matchedMember = members.find(m => user.displayName && m.name.includes(user.displayName));
+                                if (!matchedMember) matchedMember = { name: user.displayName || '家庭成員', avatar: '👤', id: '' };
+                            } else if (!matchedMember) {
+                                alert(`抱歉，您的 Google 信箱 (${userEmail}) 不在此家庭帳本的授權成員名單中。`);
+                                await window.fbModules.signOut(auth);
+                                currentUser = null;
+                                updateAuthUI();
+                                return;
+                            }
+
                             currentUser = {
                                 uid: user.uid,
-                                name: user.displayName || '家庭成員',
-                                avatar: user.photoURL ? `<img src="${user.photoURL}" class="w-5 h-5 rounded-full inline">` : '👤'
+                                name: matchedMember.name,
+                                avatar: matchedMember.avatar,
+                                memberId: matchedMember.id
                             };
                             updateAuthUI();
                             listenCloudData();
@@ -749,7 +763,7 @@
                     <div class="flex items-center space-x-1.5 text-xs bg-gray-100 px-2 py-1 rounded-lg">
                         <span>${currentUser.avatar}</span>
                         <span class="font-bold text-gray-800">${currentUser.name}</span>
-                        <button onclick="handleAuthAction()" class="text-gray-400 hover:text-red-500 ml-1"><i class="fa-solid fa-right-from-bracket"></i></button>
+                        <button onclick="handleAuthAction()" class="text-gray-400 hover:text-red-500 ml-1" title="登出"><i class="fa-solid fa-right-from-bracket"></i></button>
                     </div>
                 `;
             } else {
@@ -763,7 +777,7 @@
         }
 
         async function handleAuthAction() {
-            if (!auth) { alert('請先設定 Firebase 憑證'); openSettingsModal(); return; }
+            if (!auth) { alert('Firebase 未初始化'); return; }
             if (currentUser && auth.currentUser) {
                 await window.fbModules.signOut(auth);
             } else {
@@ -843,9 +857,7 @@
         }
 
         function getDefaultPayerId() {
-            if (!currentUser) return members[0] ? members[0].id : '';
-            const matched = members.find(m => currentUser.name && m.name.includes(currentUser.name.replace(/ \(Demo\)/, '')));
-            if (matched) return matched.id;
+            if (currentUser && currentUser.memberId) return currentUser.memberId;
             return members[0] ? members[0].id : '';
         }
 
@@ -1475,9 +1487,10 @@
         async function saveDiary(e) {
             e.preventDefault();
             const id = document.getElementById('diaryId').value;
+            const authorId = currentUser && currentUser.memberId ? currentUser.memberId : (members[0] ? members[0].id : 'm1');
             const data = {
                 date: document.getElementById('diaryDate').value,
-                author_id: members[0] ? members[0].id : 'm1',
+                author_id: authorId,
                 title: document.getElementById('diaryTitle').value,
                 mood: document.getElementById('diaryMood').value,
                 weather: document.getElementById('diaryWeather').value,
@@ -1817,24 +1830,16 @@
         function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); renderAdminLists(); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); initFormSelects(); renderApp(); }
 
-        function saveFirebaseConfig() {
-            const raw = document.getElementById('firebaseConfigInput').value.trim();
-            if (!raw) return;
-            try {
-                JSON.parse(raw);
-                localStorage.setItem('firebase_config', raw);
-                alert('Firebase 設定儲存成功！將重新載入');
-                location.reload();
-            } catch (e) { alert('JSON 格式錯誤'); }
-        }
-
         function renderAdminLists() {
             document.getElementById('memberListAdmin').innerHTML = members.map(m => `
                 <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs gap-2">
-                    <span class="w-8 text-center text-base">${m.avatar}</span>
-                    <span class="font-bold flex-1 truncate">${m.name}</span>
-                    <button onclick="editMemberPrompt('${m.id}')" class="text-indigo-600 px-2 py-1"><i class="fa-solid fa-pen"></i></button>
-                    <button onclick="deleteMember('${m.id}')" class="text-red-500 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+                    <span class="w-6 text-center text-base shrink-0">${m.avatar}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold truncate">${m.name}</p>
+                        <p class="text-[10px] text-gray-400 truncate">${m.email ? m.email : '未綁定 Google Email'}</p>
+                    </div>
+                    <button onclick="editMemberPrompt('${m.id}')" class="text-indigo-600 px-1.5 py-1 text-xs shrink-0"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteMember('${m.id}')" class="text-red-500 px-1.5 py-1 text-xs shrink-0"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `).join('');
 
@@ -1852,8 +1857,16 @@
             e.preventDefault();
             const name = document.getElementById('newMemberName').value.trim();
             const avatar = document.getElementById('newMemberAvatar').value.trim() || '👤';
-            if (name) { members.push({ id: 'm_' + Date.now(), name, avatar }); saveData(); document.getElementById('newMemberName').value = ''; renderAdminLists(); }
+            const email = document.getElementById('newMemberEmail').value.trim().toLowerCase();
+            if (name) { 
+                members.push({ id: 'm_' + Date.now(), name, avatar, email }); 
+                saveData(); 
+                document.getElementById('newMemberName').value = ''; 
+                document.getElementById('newMemberEmail').value = ''; 
+                renderAdminLists(); 
+            }
         }
+
         function editMemberPrompt(id) {
             const m = members.find(x => x.id === id);
             if (!m) return;
@@ -1861,8 +1874,18 @@
             if (newName === null) return;
             const newAvatar = prompt('修改成員圖示 (Emoji)：', m.avatar);
             if (newAvatar === null) return;
-            if (newName.trim()) { m.name = newName.trim(); m.avatar = newAvatar.trim() || m.avatar; saveData(); renderAdminLists(); }
+            const newEmail = prompt('修改對應的 Google Email（留空代表無限定）：', m.email || '');
+            if (newEmail === null) return;
+
+            if (newName.trim()) { 
+                m.name = newName.trim(); 
+                m.avatar = newAvatar.trim() || m.avatar; 
+                m.email = newEmail.trim().toLowerCase(); 
+                saveData(); 
+                renderAdminLists(); 
+            }
         }
+
         function deleteMember(id) {
             if (members.length <= 1) { alert('至少需保留一位成員'); return; }
             members = members.filter(m => m.id !== id); saveData(); renderAdminLists();
@@ -1875,6 +1898,7 @@
             const type = document.getElementById('newCategoryType').value;
             if (name) { categories.push({ id: 'c_' + Date.now(), name, type, icon }); saveData(); document.getElementById('newCategoryName').value = ''; renderAdminLists(); }
         }
+
         function editCategoryPrompt(id) {
             const c = categories.find(x => x.id === id);
             if (!c) return;
@@ -1884,6 +1908,7 @@
             if (newIcon === null) return;
             if (newName.trim()) { c.name = newName.trim(); c.icon = newIcon.trim() || c.icon; saveData(); renderAdminLists(); }
         }
+
         function deleteCategory(id) {
             categories = categories.filter(c => c.id !== id); saveData(); renderAdminLists();
         }
