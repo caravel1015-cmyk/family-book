@@ -56,15 +56,18 @@
             </div>
         </div>
 
-        <!-- 三分頁導覽標籤 -->
-        <div class="max-w-md mx-auto px-4 flex border-t border-gray-100">
-            <button id="tabTimeline" onclick="switchTab('timeline')" class="flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition">
+        <!-- 四分頁導覽標籤 -->
+        <div class="max-w-md mx-auto px-2 flex border-t border-gray-100 overflow-x-auto">
+            <button id="tabTimeline" onclick="switchTab('timeline')" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition whitespace-nowrap">
                 <i class="fa-solid fa-house-chimney mr-1"></i> 家庭時軸
             </button>
-            <button id="tabPersonal" onclick="switchTab('personal')" class="flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition">
+            <button id="tabPersonal" onclick="switchTab('personal')" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
                 <i class="fa-solid fa-user mr-1"></i> 個人專區
             </button>
-            <button id="tabStats" onclick="switchTab('stats')" class="flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition">
+            <button id="tabRecurring" onclick="switchTab('recurring')" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
+                <i class="fa-solid fa-arrows-rotate mr-1"></i> 週期與提醒
+            </button>
+            <button id="tabStats" onclick="switchTab('stats')" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
                 <i class="fa-solid fa-chart-pie mr-1"></i> 統計分析
             </button>
         </div>
@@ -73,13 +76,27 @@
     <!-- 主要內容區 -->
     <main class="max-w-md mx-auto px-4 pt-4 space-y-6">
 
+        <!-- 頂部即將到期事件提醒橫幅 (位在首頁標題與分頁按鈕下方) -->
+        <section id="topReminderBanner" class="hidden">
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 shadow-sm space-y-2">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-xs text-amber-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-bell text-amber-600 animate-bounce"></i> 即將到期事件提醒
+                    </h3>
+                    <button onclick="switchTab('recurring'); switchRecurringSubTab('reminder');" class="text-[10px] text-amber-700 font-bold hover:underline">
+                        管理全部提醒 →
+                    </button>
+                </div>
+                <div id="topReminderList" class="space-y-1.5"></div>
+            </div>
+        </section>
+
         <!-- 家庭時軸視圖 -->
         <div id="viewTimeline" class="space-y-6">
-            <!-- 總覽卡片與過濾器 -->
             <section class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p class="text-xs text-indigo-100 uppercase tracking-wider font-semibold">家庭公開總支出</p>
+                        <p class="text-xs text-indigo-100 uppercase tracking-wider font-semibold">家庭公開總支出 (不含報帳)</p>
                         <h2 id="totalExpenseDisplay" class="text-3xl font-extrabold mt-1">$0</h2>
                     </div>
                     <div class="text-right">
@@ -87,7 +104,6 @@
                     </div>
                 </div>
 
-                <!-- 檢視過濾按鈕 -->
                 <div class="grid grid-cols-3 gap-1.5 mt-5 bg-white/10 p-1 rounded-xl text-xs font-medium">
                     <button onclick="setExpenseFilter('all')" id="filterBtn-all" class="py-1.5 rounded-lg bg-white text-indigo-700 shadow-sm transition">全部支出</button>
                     <button onclick="setExpenseFilter('public')" id="filterBtn-public" class="py-1.5 rounded-lg text-white hover:bg-white/10 transition">公開支出</button>
@@ -95,7 +111,6 @@
                 </div>
             </section>
 
-            <!-- 快速功能按鈕 -->
             <section class="grid grid-cols-2 gap-3">
                 <button onclick="openTransactionModal()" class="bg-white hover:bg-indigo-50 border border-indigo-100 text-indigo-600 font-semibold py-3 px-4 rounded-xl shadow-sm flex items-center justify-center space-x-2 transition">
                     <i class="fa-solid fa-circle-plus text-lg"></i>
@@ -107,7 +122,6 @@
                 </button>
             </section>
 
-            <!-- 搜尋與日期篩選列 -->
             <section class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex gap-2 items-center">
                 <div class="relative flex-1">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
@@ -119,7 +133,6 @@
                 <button onclick="clearTimelineFilter()" class="text-xs text-gray-500 hover:text-gray-700 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition">清除</button>
             </section>
 
-            <!-- 時間軸列表 -->
             <section class="space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h3 class="font-bold text-gray-800 text-base">家庭動態時軸</h3>
@@ -136,7 +149,7 @@
                     <span id="personalUserAvatar" class="text-3xl bg-white/20 p-2 rounded-full">👤</span>
                     <div>
                         <h2 id="personalUserName" class="text-lg font-bold">個人儀表板</h2>
-                        <p class="text-xs text-emerald-100">專屬私密帳務與日記統計</p>
+                        <p class="text-xs text-emerald-100">專屬私密帳務與日記統計 (不含報帳)</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 bg-white/10 p-3 rounded-xl text-center">
@@ -160,18 +173,72 @@
             </section>
         </div>
 
+        <!-- 週期與提醒視圖 -->
+        <div id="viewRecurring" class="space-y-6 hidden">
+            <section class="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-lg">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold">🔄 週期與提醒中心</h2>
+                        <p class="text-xs text-amber-100 mt-1">管理定期扣款、家庭例行事件與單次提醒</p>
+                    </div>
+                    <button onclick="triggerAutoCheckRecurring()" class="bg-white/20 hover:bg-white/30 text-white font-bold text-xs px-3 py-2 rounded-xl transition flex items-center gap-1 border border-white/30">
+                        <i class="fa-solid fa-bolt"></i> 檢查並產生記帳
+                    </button>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <div class="grid grid-cols-3 gap-1 bg-gray-200 p-1 rounded-xl text-xs font-bold text-center">
+                    <button id="subTabRecTx" onclick="switchRecurringSubTab('recTx')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">循環記帳</button>
+                    <button id="subTabRecEvent" onclick="switchRecurringSubTab('recEvent')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">循環事件</button>
+                    <button id="subTabReminder" onclick="switchRecurringSubTab('reminder')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">事件提醒</button>
+                </div>
+
+                <!-- 1. 循環記帳子面板 -->
+                <div id="panelRecTx" class="space-y-3">
+                    <div class="flex justify-between items-center px-1">
+                        <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-repeat text-indigo-600 mr-1"></i> 定期循環記帳清單</h3>
+                        <button onclick="openRecurringTxModal()" class="text-xs bg-indigo-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-indigo-700 transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> 新增設定
+                        </button>
+                    </div>
+                    <div id="recurringTxList" class="space-y-3"></div>
+                </div>
+
+                <!-- 2. 循環事件子面板 -->
+                <div id="panelRecEvent" class="space-y-3 hidden">
+                    <div class="flex justify-between items-center px-1">
+                        <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-calendar-days text-amber-600 mr-1"></i> 週期性家庭事件</h3>
+                        <button onclick="openRecurringEventModal()" class="text-xs bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-amber-700 transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> 新增事件
+                        </button>
+                    </div>
+                    <div id="recurringEventList" class="space-y-3"></div>
+                </div>
+
+                <!-- 3. 事件提醒子面板 -->
+                <div id="panelReminder" class="space-y-3 hidden">
+                    <div class="flex justify-between items-center px-1">
+                        <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-bell text-emerald-600 mr-1"></i> 近期與單次事件提醒</h3>
+                        <button onclick="openReminderModal()" class="text-xs bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-emerald-700 transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> 新增提醒
+                        </button>
+                    </div>
+                    <div id="reminderList" class="space-y-3"></div>
+                </div>
+            </section>
+        </div>
+
         <!-- 統計分析視圖 -->
         <div id="viewStats" class="space-y-6 hidden">
-            <!-- 統計範圍切換按鈕 -->
             <section class="grid grid-cols-2 gap-2 bg-gray-200 p-1 rounded-xl text-xs font-bold">
                 <button id="statsScopePublic" onclick="setStatsScope('public')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">🌐 家庭公開統計</button>
                 <button id="statsScopePersonal" onclick="setStatsScope('personal')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">🔒 個人專區統計</button>
             </section>
 
-            <!-- 總收支摘要卡片 -->
             <section class="grid grid-cols-2 gap-3">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <p class="text-xs text-gray-500 font-semibold">總支出</p>
+                    <p class="text-xs text-gray-500 font-semibold">總支出 (不含報帳)</p>
                     <p id="statsTotalExpense" class="text-xl font-extrabold text-red-600 mt-1">$0</p>
                 </div>
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
@@ -180,21 +247,18 @@
                 </div>
             </section>
 
-            <!-- 分類支出比較分析 -->
             <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-chart-pie text-primary mr-1"></i> 支出分類佔比比較</h3>
                     <span id="statsScopeLabel" class="text-xs text-gray-400">🌐 家庭公開</span>
                 </div>
-                <div id="categoryStatsContainer" class="space-y-3">
-                    <!-- 動態帶入分類百分比進度條 -->
-                </div>
+                <div id="categoryStatsContainer" class="space-y-3"></div>
             </section>
         </div>
 
     </main>
 
-    <!-- ================= Modal：記帳表單 ================= -->
+    <!-- Modal：記帳表單 -->
     <div id="transactionModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
@@ -234,16 +298,25 @@
                         </select>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">備註說明</label>
-                    <input type="text" id="txNote" placeholder="例如：晚餐吃牛肉麵" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">備註 / 性質</label>
+                        <select id="txTag" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                            <option value="normal">一般支出</option>
+                            <option value="reimburse">📌 報帳 (不計入支出)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">備註說明</label>
+                        <input type="text" id="txNote" placeholder="例如：晚餐吃牛肉麵" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                    </div>
                 </div>
                 <button type="submit" class="w-full bg-primary text-white font-bold py-3 rounded-xl shadow-md hover:bg-indigo-700 transition">儲存記帳</button>
             </form>
         </div>
     </div>
 
-    <!-- ================= Modal：日記表單 ================= -->
+    <!-- Modal：日記表單 -->
     <div id="diaryModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
@@ -297,7 +370,153 @@
         </div>
     </div>
 
-    <!-- ================= Modal：設定與管理 ================= -->
+    <!-- Modal：循環記帳表單 -->
+    <div id="recurringTxModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="recTxModalTitle" class="text-lg font-bold text-gray-900">新增循環記帳設定</h3>
+                <button onclick="closeRecurringTxModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <form id="recurringTxForm" onsubmit="saveRecurringTx(event)" class="space-y-4">
+                <input type="hidden" id="recTxId">
+                <div class="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-xl">
+                    <button type="button" id="recTypeExpense" onclick="setRecTxType('expense')" class="py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-red-600 transition">支出</button>
+                    <button type="button" id="recTypeIncome" onclick="setRecTxType('income')" class="py-2 text-sm font-bold rounded-lg text-gray-600 transition">收入</button>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">金額 ($)</label>
+                    <input type="number" id="recTxAmount" required placeholder="例如：12000" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-lg font-bold focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">分類</label>
+                        <select id="recTxCategory" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">預設付款人</label>
+                        <select id="recTxPayer" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">循環週期</label>
+                        <select id="recTxFrequency" class="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                            <option value="daily">每日</option>
+                            <option value="weekly">每週</option>
+                            <option value="monthly" selected>每月</option>
+                            <option value="yearly">每年</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">下次執行日</label>
+                        <input type="date" id="recTxNextDate" required class="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">瀏覽權限</label>
+                        <select id="recTxVisibility" class="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                            <option value="public" selected>🌐 公開</option>
+                            <option value="private">🔒 私密</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">項目名稱/備註</label>
+                    <input type="text" id="recTxNote" placeholder="例如：房屋租金 / 電信費" required class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-indigo-700 transition">儲存循環設定</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal：循環事件表單 -->
+    <div id="recurringEventModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="recEventModalTitle" class="text-lg font-bold text-gray-900">新增循環事件</h3>
+                <button onclick="closeRecurringEventModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <form id="recurringEventForm" onsubmit="saveRecurringEvent(event)" class="space-y-4">
+                <input type="hidden" id="recEventId">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">事件名稱</label>
+                    <input type="text" id="recEventTitle" required placeholder="例如：例行家庭大掃除" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">循環週期</label>
+                        <select id="recEventFrequency" class="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                            <option value="weekly">每週</option>
+                            <option value="monthly" selected>每月</option>
+                            <option value="yearly">每年</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">下次發生日</label>
+                        <input type="date" id="recEventNextDate" required class="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">提前幾天首頁提醒</label>
+                        <input type="number" id="recEventRemindDays" min="0" max="30" value="3" required placeholder="例如：3" class="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">瀏覽權限</label>
+                        <select id="recEventVisibility" class="w-full border border-gray-300 rounded-xl px-2 py-2 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                            <option value="public" selected>🌐 公開</option>
+                            <option value="private">🔒 私密</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">詳細說明/備註</label>
+                    <textarea id="recEventNote" rows="3" placeholder="例如：清理冷氣濾網、浴室除霉" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-amber-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-amber-700 transition">儲存循環事件</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal：事件提醒表單 -->
+    <div id="reminderModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="reminderModalTitle" class="text-lg font-bold text-gray-900">新增事件提醒</h3>
+                <button onclick="closeReminderModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <form id="reminderForm" onsubmit="saveReminder(event)" class="space-y-4">
+                <input type="hidden" id="reminderId">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">提醒內容</label>
+                    <input type="text" id="reminderTitle" required placeholder="例如：記得繳交信用卡帳單" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">提醒日期</label>
+                        <input type="date" id="reminderDate" required class="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">提醒時間</label>
+                        <input type="time" id="reminderTime" class="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">瀏覽權限</label>
+                        <select id="reminderVisibility" class="w-full border border-gray-300 rounded-xl px-2 py-2.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                            <option value="public" selected>🌐 公開</option>
+                            <option value="private">🔒 私密</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">備註說明</label>
+                    <input type="text" id="reminderNote" placeholder="例如：應繳總金額 $3,500" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-emerald-700 transition">儲存提醒</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal：設定與管理 (已新增 CSV 匯出與完整 JSON 備份) -->
     <div id="settingsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
@@ -305,6 +524,32 @@
                 <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="space-y-6">
+                <!-- 1. CSV / JSON 資料備份匯出專區 -->
+                <div class="bg-emerald-50/80 p-4 rounded-2xl border border-emerald-100 space-y-3">
+                    <h4 class="font-bold text-sm text-emerald-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv text-emerald-600 text-base"></i> 資料備份與匯出
+                    </h4>
+                    <p class="text-xs text-emerald-700">可將資料導出為 Excel 支援的 CSV 格式，或備份完整資料檔。</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="exportTransactionsCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-xl text-xs font-bold shadow-xs transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-download"></i> 匯出記帳 (CSV)
+                        </button>
+                        <button onclick="exportDiariesCSV()" class="bg-teal-600 hover:bg-teal-700 text-white py-2 px-3 rounded-xl text-xs font-bold shadow-xs transition flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-file-arrow-down"></i> 匯出日記 (CSV)
+                        </button>
+                    </div>
+                    <div class="pt-2 border-t border-emerald-200/60 flex gap-2">
+                        <button onclick="exportFullBackupJSON()" class="flex-1 bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 py-1.5 rounded-xl text-xs font-bold transition">
+                            <i class="fa-solid fa-box-archive mr-1"></i>備份 JSON
+                        </button>
+                        <label class="flex-1 bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 py-1.5 rounded-xl text-xs font-bold transition text-center cursor-pointer">
+                            <i class="fa-solid fa-upload mr-1"></i>還原 JSON
+                            <input type="file" id="importJsonInput" accept=".json" onchange="importFullBackupJSON(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. Firebase 設定 -->
                 <div class="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 space-y-2">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-sm text-indigo-900"><i class="fa-solid fa-cloud text-indigo-600 mr-1"></i> Firebase 雲端設定</h4>
@@ -313,6 +558,8 @@
                     <textarea id="firebaseConfigInput" rows="3" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "..."}' class="w-full border rounded-lg p-2 text-xs font-mono"></textarea>
                     <button onclick="saveFirebaseConfig()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold shadow-sm">儲存設定並連結</button>
                 </div>
+
+                <!-- 3. 成員管理 -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
                     <h4 class="font-bold text-sm text-gray-800 mb-3"><i class="fa-solid fa-users text-primary mr-1"></i> 家庭成員管理</h4>
                     <div id="memberListAdmin" class="space-y-2 mb-3"></div>
@@ -322,6 +569,8 @@
                         <button type="submit" class="bg-primary text-white px-3 py-1.5 rounded-lg text-sm font-bold">新增</button>
                     </form>
                 </div>
+
+                <!-- 4. 分類管理 -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
                     <h4 class="font-bold text-sm text-gray-800 mb-3"><i class="fa-solid fa-tags text-secondary mr-1"></i> 記帳分類管理</h4>
                     <div id="categoryListAdmin" class="space-y-2 mb-3 max-h-40 overflow-y-auto"></div>
@@ -360,23 +609,49 @@
         ];
 
         let transactions = JSON.parse(localStorage.getItem('family_transactions')) || [
-            { id: 't1', date: getTodayStr(), type: 'expense', amount: 350, category_id: 'c1', payer_id: 'm1', note: '全家晚餐牛肉麵', visibility: 'public', userUid: 'demo1' },
-            { id: 't2', date: getTodayStr(), type: 'expense', amount: 1200, category_id: 'c2', payer_id: 'm2', note: '汽車加油', visibility: 'public', userUid: 'demo2' }
+            { id: 't1', date: getTodayStr(), type: 'expense', amount: 350, category_id: 'c1', payer_id: 'm1', note: '全家晚餐牛肉麵', visibility: 'public', tag: 'normal', userUid: 'demo1' },
+            { id: 't2', date: getTodayStr(), type: 'expense', amount: 1200, category_id: 'c2', payer_id: 'm2', note: '汽車加油', visibility: 'public', tag: 'normal', userUid: 'demo2' }
         ];
 
         let diaries = JSON.parse(localStorage.getItem('family_diaries')) || [
             { id: 'd1', date: getTodayStr(), author_id: 'm1', title: '週末公園散步', content: '今天帶小寶去公園踢球，晚餐吃了美味牛肉麵。', mood: '😊', weather: '☀️ 晴天', visibility: 'public', userUid: 'demo1' }
         ];
 
+        let recurringTransactions = JSON.parse(localStorage.getItem('family_recurring_txs')) || [
+            { id: 'rt1', type: 'expense', amount: 12000, category_id: 'c4', payer_id: 'm1', frequency: 'monthly', nextDate: getTodayStr(), note: '房屋租金扣款', visibility: 'public', userUid: 'demo1' }
+        ];
+
+        let recurringEvents = JSON.parse(localStorage.getItem('family_recurring_events')) || [
+            { id: 're1', title: '全家定期大掃除', frequency: 'monthly', nextDate: getTodayStr(), remindDays: 3, note: '清洗窗簾與冷氣濾網', visibility: 'public', userUid: 'demo1' }
+        ];
+
+        let reminders = JSON.parse(localStorage.getItem('family_reminders')) || [
+            { id: 'rm1', title: '繳納信用卡費', date: getTodayStr(), time: '20:00', note: '金額約 $5,400', completed: false, visibility: 'public', userUid: 'demo1' }
+        ];
+
         let currentUser = null;
         let currentTab = 'timeline';
+        let currentRecurringSubTab = 'recTx';
         let currentExpenseFilter = 'all';
         let currentTxType = 'expense';
-        let currentStatsScope = 'public'; // 'public' 或 'personal'
+        let currentRecTxType = 'expense';
+        let currentStatsScope = 'public';
         let db = null;
         let auth = null;
 
         function getTodayStr() { return new Date().toISOString().split('T')[0]; }
+
+        function calculateNextDate(startDateStr, frequency) {
+            let date = new Date(startDateStr);
+            if (isNaN(date.getTime())) date = new Date();
+            
+            if (frequency === 'daily') date.setDate(date.getDate() + 1);
+            else if (frequency === 'weekly') date.setDate(date.getDate() + 7);
+            else if (frequency === 'monthly') date.setMonth(date.getMonth() + 1);
+            else if (frequency === 'yearly') date.setFullYear(date.getFullYear() + 1);
+            
+            return date.toISOString().split('T')[0];
+        }
 
         window.onload = function() {
             initFirebase();
@@ -384,6 +659,9 @@
             renderApp();
             document.getElementById('txDate').value = getTodayStr();
             document.getElementById('diaryDate').value = getTodayStr();
+            document.getElementById('recTxNextDate').value = getTodayStr();
+            document.getElementById('recEventNextDate').value = getTodayStr();
+            document.getElementById('reminderDate').value = getTodayStr();
         };
 
         function initFirebase() {
@@ -457,6 +735,18 @@
                 diaries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
             });
+            window.fbModules.onSnapshot(window.fbModules.collection(db, 'recurringTransactions'), (snap) => {
+                recurringTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderApp();
+            });
+            window.fbModules.onSnapshot(window.fbModules.collection(db, 'recurringEvents'), (snap) => {
+                recurringEvents = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderApp();
+            });
+            window.fbModules.onSnapshot(window.fbModules.collection(db, 'reminders'), (snap) => {
+                reminders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderApp();
+            });
         }
 
         function saveData() {
@@ -465,35 +755,65 @@
             if (!db) {
                 localStorage.setItem('family_transactions', JSON.stringify(transactions));
                 localStorage.setItem('family_diaries', JSON.stringify(diaries));
+                localStorage.setItem('family_recurring_txs', JSON.stringify(recurringTransactions));
+                localStorage.setItem('family_recurring_events', JSON.stringify(recurringEvents));
+                localStorage.setItem('family_reminders', JSON.stringify(reminders));
             }
         }
 
         function switchTab(tab) {
             currentTab = tab;
-            const tabs = ['timeline', 'personal', 'stats'];
+            const tabs = ['timeline', 'personal', 'recurring', 'stats'];
             tabs.forEach(t => {
                 const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
                 const view = document.getElementById(`view${t.charAt(0).toUpperCase() + t.slice(1)}`);
                 if (t === tab) {
-                    btn.className = "flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition";
+                    btn.className = "flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition whitespace-nowrap";
                     view.classList.remove('hidden');
                 } else {
-                    btn.className = "flex-1 py-2.5 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition";
+                    btn.className = "flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap";
                     view.classList.add('hidden');
                 }
             });
             renderApp();
         }
 
+        function switchRecurringSubTab(subTab) {
+            currentRecurringSubTab = subTab;
+            const subTabs = ['recTx', 'recEvent', 'reminder'];
+            subTabs.forEach(s => {
+                const btn = document.getElementById(`subTab${s.charAt(0).toUpperCase() + s.slice(1)}`);
+                const panel = document.getElementById(`panel${s.charAt(0).toUpperCase() + s.slice(1)}`);
+                if (s === subTab) {
+                    btn.className = "py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition";
+                    panel.classList.remove('hidden');
+                } else {
+                    btn.className = "py-2 rounded-lg text-gray-600 hover:text-gray-900 transition";
+                    panel.classList.add('hidden');
+                }
+            });
+            renderRecurringView();
+        }
+
         function initFormSelects() {
             document.getElementById('txCategory').innerHTML = categories.filter(c => c.type === currentTxType).map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
             document.getElementById('txPayer').innerHTML = members.map(m => `<option value="${m.id}">${m.avatar} ${m.name}</option>`).join('');
+            
+            document.getElementById('recTxCategory').innerHTML = categories.filter(c => c.type === currentRecTxType).map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+            document.getElementById('recTxPayer').innerHTML = members.map(m => `<option value="${m.id}">${m.avatar} ${m.name}</option>`).join('');
         }
 
         function setTxType(type) {
             currentTxType = type;
             document.getElementById('typeExpense').className = type === 'expense' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-red-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
             document.getElementById('typeIncome').className = type === 'income' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-emerald-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
+            initFormSelects();
+        }
+
+        function setRecTxType(type) {
+            currentRecTxType = type;
+            document.getElementById('recTypeExpense').className = type === 'expense' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-red-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
+            document.getElementById('recTypeIncome').className = type === 'income' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-emerald-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
             initFormSelects();
         }
 
@@ -530,14 +850,105 @@
         }
 
         function canViewItem(item) {
-            if (item.visibility === 'public') return true;
+            if (!item.visibility || item.visibility === 'public') return true;
             return currentUser && item.userUid === currentUser.uid;
         }
 
         function renderApp() {
+            renderTopReminderBanner();
             if (currentTab === 'timeline') renderTimelineView();
             else if (currentTab === 'personal') renderPersonalView();
+            else if (currentTab === 'recurring') renderRecurringView();
             else if (currentTab === 'stats') renderStatsView();
+        }
+
+        function renderTopReminderBanner() {
+            const banner = document.getElementById('topReminderBanner');
+            const listContainer = document.getElementById('topReminderList');
+            const todayStr = getTodayStr();
+            const todayDate = new Date(todayStr);
+
+            let allActiveAlerts = [];
+
+            reminders.filter(rm => !rm.completed && canViewItem(rm)).forEach(rm => {
+                allActiveAlerts.push({
+                    id: rm.id,
+                    type: 'reminder',
+                    title: rm.title,
+                    date: rm.date,
+                    time: rm.time,
+                    visibility: rm.visibility,
+                    note: rm.note
+                });
+            });
+
+            recurringEvents.filter(re => canViewItem(re)).forEach(re => {
+                const nextD = new Date(re.nextDate);
+                const diffTime = nextD - todayDate;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const remindLimit = Number(re.remindDays !== undefined ? re.remindDays : 3);
+
+                if (diffDays <= remindLimit) {
+                    allActiveAlerts.push({
+                        id: re.id,
+                        type: 'recEvent',
+                        title: re.title,
+                        date: re.nextDate,
+                        diffDays: diffDays,
+                        visibility: re.visibility,
+                        note: re.note
+                    });
+                }
+            });
+
+            if (allActiveAlerts.length === 0) {
+                banner.classList.add('hidden');
+                return;
+            }
+
+            banner.classList.remove('hidden');
+            const sorted = allActiveAlerts.sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 4);
+
+            listContainer.innerHTML = sorted.map(item => {
+                const isToday = item.date === todayStr;
+                const isPast = item.date < todayStr;
+
+                if (item.type === 'reminder') {
+                    return `
+                        <div class="flex items-center justify-between bg-white px-3 py-2 rounded-xl text-xs shadow-xs border border-amber-100">
+                            <div class="flex items-center space-x-2 truncate pr-2">
+                                <button onclick="toggleReminderComplete('${item.id}')" class="text-gray-300 hover:text-emerald-500 transition">
+                                    <i class="fa-solid fa-circle"></i>
+                                </button>
+                                <span class="font-bold text-gray-800 truncate">${item.title}</span>
+                                ${item.visibility === 'private' ? '<span class="text-[10px] bg-gray-100 text-gray-500 px-1 rounded">🔒</span>' : ''}
+                            </div>
+                            <div class="flex items-center space-x-2 shrink-0">
+                                <span class="font-semibold ${isPast ? 'text-red-500 font-bold' : isToday ? 'text-amber-600 font-bold' : 'text-gray-500'} text-[11px]">
+                                    ${isPast ? '已逾期' : isToday ? '今天 ' + (item.time || '') : item.date}
+                                </span>
+                                <button onclick="deleteReminder('${item.id}')" class="text-gray-300 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="flex items-center justify-between bg-white px-3 py-2 rounded-xl text-xs shadow-xs border border-amber-200">
+                            <div class="flex items-center space-x-2 truncate pr-2">
+                                <span class="text-amber-600 font-bold"><i class="fa-solid fa-arrows-spin"></i></span>
+                                <span class="font-bold text-gray-800 truncate">${item.title}</span>
+                                <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold">循環事件</span>
+                                ${item.visibility === 'private' ? '<span class="text-[10px] bg-gray-100 text-gray-500 px-1 rounded">🔒</span>' : ''}
+                            </div>
+                            <div class="flex items-center space-x-2 shrink-0">
+                                <span class="font-bold text-amber-700 text-[11px]">
+                                    ${isPast ? '今日到期' : isToday ? '今天到期' : item.diffDays + '天後 (' + item.date + ')'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
         }
 
         function renderTimelineView() {
@@ -559,7 +970,7 @@
                 filteredDiaries = filteredDiaries.filter(d => (d.title || '').toLowerCase().includes(keyword) || (d.content || '').toLowerCase().includes(keyword));
             }
 
-            const totalExpense = filteredTx.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+            const totalExpense = filteredTx.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((sum, t) => sum + Number(t.amount), 0);
             document.getElementById('totalExpenseDisplay').innerText = `$${totalExpense.toLocaleString()}`;
             document.getElementById('recordCountDisplay').innerText = `共 ${filteredTx.length + filteredDiaries.length} 筆`;
 
@@ -578,7 +989,8 @@
             document.getElementById('personalUserName').innerText = `${currentUser.name} 的個人儀表板`;
             const myTxs = transactions.filter(t => t.userUid === currentUser.uid);
             const myDiaries = diaries.filter(d => d.userUid === currentUser.uid);
-            document.getElementById('personalExpense').innerText = `$${myTxs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
+            
+            document.getElementById('personalExpense').innerText = `$${myTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
             document.getElementById('personalIncome').innerText = `$${myTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
             document.getElementById('personalDiaryCount').innerText = `${myDiaries.length} 篇`;
 
@@ -587,7 +999,187 @@
             document.getElementById('personalTimelineContainer').innerHTML = sortedDates.length === 0 ? `<div class="text-center py-10 text-gray-400 text-sm">您目前還沒有建立個人紀錄</div>` : sortedDates.map(date => renderDayBlock(date, myTxs, myDiaries)).join('');
         }
 
-        // ================= 統計分析檢視邏輯 =================
+        function renderRecurringView() {
+            const freqMap = { daily: '每日', weekly: '每週', monthly: '每月', yearly: '每年' };
+            const today = getTodayStr();
+
+            const recTxContainer = document.getElementById('recurringTxList');
+            const visibleRecTxs = recurringTransactions.filter(rt => canViewItem(rt));
+
+            if (visibleRecTxs.length === 0) {
+                recTxContainer.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs bg-white rounded-2xl border border-gray-100">尚無定期循環記帳設定</div>`;
+            } else {
+                recTxContainer.innerHTML = visibleRecTxs.map(rt => {
+                    const cat = categories.find(c => c.id === rt.category_id) || { name: '其他', icon: '📌' };
+                    const payer = members.find(m => m.id === rt.payer_id) || { name: '成員', avatar: '👤' };
+                    const isDue = rt.nextDate <= today;
+                    const isOwner = currentUser && rt.userUid === currentUser.uid;
+                    const isPrivate = rt.visibility === 'private';
+
+                    return `
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-2">
+                            <div class="flex justify-between items-start">
+                                <div class="flex items-center space-x-2.5">
+                                    <span class="text-xl bg-indigo-50 p-2 rounded-xl text-indigo-600">${cat.icon}</span>
+                                    <div>
+                                        <h4 class="font-bold text-sm text-gray-900 flex items-center gap-1.5">
+                                            ${rt.note || cat.name}
+                                            ${isPrivate ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md font-normal">🔒 私密</span>' : ''}
+                                        </h4>
+                                        <p class="text-xs text-gray-500">${payer.avatar} ${payer.name} · 週期：<strong class="text-indigo-600">${freqMap[rt.frequency]}</strong></p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-extrabold text-sm ${rt.type === 'expense' ? 'text-red-600' : 'text-emerald-600'}">${rt.type === 'expense' ? '-' : '+'}$${Number(rt.amount).toLocaleString()}</p>
+                                    <p class="text-[10px] ${isDue ? 'text-red-500 font-bold' : 'text-gray-400'}">下次：${rt.nextDate}</p>
+                                </div>
+                            </div>
+                            <div class="flex justify-end items-center space-x-2 pt-2 border-t border-gray-50">
+                                ${isDue ? `<button onclick="executeSingleRecurringTx('${rt.id}')" class="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-lg font-bold hover:bg-indigo-100 transition"><i class="fa-solid fa-play text-[10px] mr-1"></i>立即執行記帳</button>` : ''}
+                                ${isOwner ? `
+                                    <button onclick="openRecurringTxModal('${rt.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteRecurringTx('${rt.id}')" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const recEventContainer = document.getElementById('recurringEventList');
+            const visibleRecEvents = recurringEvents.filter(re => canViewItem(re));
+
+            if (visibleRecEvents.length === 0) {
+                recEventContainer.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs bg-white rounded-2xl border border-gray-100">尚無週期性事件設定</div>`;
+            } else {
+                recEventContainer.innerHTML = visibleRecEvents.map(re => {
+                    const isOwner = currentUser && re.userUid === currentUser.uid;
+                    const isPrivate = re.visibility === 'private';
+                    const remindDays = re.remindDays !== undefined ? re.remindDays : 3;
+
+                    return `
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-2">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold text-sm text-gray-900 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-arrows-spin text-amber-500"></i>${re.title}
+                                        ${isPrivate ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md font-normal">🔒 私密</span>' : ''}
+                                    </h4>
+                                    <p class="text-xs text-gray-500 mt-1">週期：<span class="font-bold text-amber-600">${freqMap[re.frequency]}</span> · 下次：<span class="font-bold text-gray-700">${re.nextDate}</span> (<span class="text-amber-700 font-bold">${remindDays}天前提醒</span>)</p>
+                                </div>
+                                ${isOwner ? `
+                                    <div class="flex space-x-1">
+                                        <button onclick="openRecurringEventModal('${re.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+                                        <button onclick="deleteRecurringEvent('${re.id}')" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            ${re.note ? `<p class="text-xs text-gray-600 bg-amber-50/50 p-2 rounded-xl border border-amber-100/50">${re.note}</p>` : ''}
+                            <div class="flex justify-end pt-1">
+                                <button onclick="advanceRecurringEventDate('${re.id}')" class="text-xs text-amber-700 font-semibold hover:underline">推算移至下一週期 →</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const reminderContainer = document.getElementById('reminderList');
+            const visibleReminders = reminders.filter(rm => canViewItem(rm));
+
+            if (visibleReminders.length === 0) {
+                reminderContainer.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs bg-white rounded-2xl border border-gray-100">尚無事件提醒</div>`;
+            } else {
+                const sortedReminders = [...visibleReminders].sort((a, b) => new Date(a.date + ' ' + (a.time || '00:00')) - new Date(b.date + ' ' + (b.time || '00:00')));
+                reminderContainer.innerHTML = sortedReminders.map(rm => {
+                    const isPast = rm.date < today && !rm.completed;
+                    const isOwner = currentUser && rm.userUid === currentUser.uid;
+                    const isPrivate = rm.visibility === 'private';
+
+                    return `
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-start justify-between gap-3 ${rm.completed ? 'opacity-60 bg-gray-50' : ''}">
+                            <div class="flex items-start space-x-3">
+                                <button onclick="toggleReminderComplete('${rm.id}')" class="mt-0.5 text-lg ${rm.completed ? 'text-emerald-500' : 'text-gray-300 hover:text-emerald-500'} transition">
+                                    <i class="fa-solid ${rm.completed ? 'fa-circle-check' : 'fa-circle'}"></i>
+                                </button>
+                                <div>
+                                    <h4 class="font-bold text-sm ${rm.completed ? 'line-through text-gray-400' : 'text-gray-900'} flex items-center gap-1.5">
+                                        ${rm.title}
+                                        ${isPrivate ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md font-normal">🔒 私密</span>' : ''}
+                                    </h4>
+                                    <p class="text-xs text-gray-500 mt-0.5">
+                                        <i class="fa-regular fa-clock mr-1"></i>${rm.date} ${rm.time || ''}
+                                        ${isPast ? '<span class="text-red-500 font-bold ml-1.5">[已逾期]</span>' : ''}
+                                    </p>
+                                    ${rm.note ? `<p class="text-xs text-gray-600 mt-1">${rm.note}</p>` : ''}
+                                </div>
+                            </div>
+                            ${isOwner ? `
+                                <div class="flex space-x-1">
+                                    <button onclick="openReminderModal('${rm.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteReminder('${rm.id}')" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function triggerAutoCheckRecurring() {
+            const today = getTodayStr();
+            let count = 0;
+
+            for (let rt of recurringTransactions) {
+                if (rt.nextDate <= today && canViewItem(rt)) {
+                    await executeSingleRecurringTx(rt.id, false);
+                    count++;
+                }
+            }
+
+            if (count > 0) {
+                alert(`成功檢查並自動生成了 ${count} 筆循環記帳紀錄！`);
+                renderApp();
+            } else {
+                alert('目前沒有到期需要執行的循環記帳。');
+            }
+        }
+
+        async function executeSingleRecurringTx(rtId, showNotice = true) {
+            const rt = recurringTransactions.find(x => x.id === rtId);
+            if (!rt) return;
+
+            const txData = {
+                type: rt.type,
+                amount: rt.amount,
+                category_id: rt.category_id,
+                payer_id: rt.payer_id,
+                date: rt.nextDate,
+                visibility: rt.visibility || 'public',
+                tag: 'normal',
+                note: `[循環] ${rt.note || ''}`.trim(),
+                userUid: rt.userUid || (currentUser ? currentUser.uid : 'demo1')
+            };
+
+            if (db) {
+                await window.fbModules.addDoc(window.fbModules.collection(db, 'transactions'), txData);
+            } else {
+                transactions.push({ id: 't_' + Date.now(), ...txData });
+            }
+
+            const nextDate = calculateNextDate(rt.nextDate, rt.frequency);
+            if (db) {
+                await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringTransactions', rt.id), { nextDate });
+            } else {
+                rt.nextDate = nextDate;
+                saveData();
+            }
+
+            if (showNotice) {
+                alert(`已成功產生記帳！下次執行日期已更新為：${nextDate}`);
+                renderApp();
+            }
+        }
+
         function renderStatsView() {
             let targetTxs = [];
             if (currentStatsScope === 'public') {
@@ -602,13 +1194,12 @@
                 targetTxs = transactions.filter(t => t.userUid === currentUser.uid);
             }
 
-            const totalExp = targetTxs.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+            const totalExp = targetTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
             const totalInc = targetTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
 
             document.getElementById('statsTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
             document.getElementById('statsTotalIncome').innerText = `$${totalInc.toLocaleString()}`;
 
-            // 分類支出統計進度條
             const expCategories = categories.filter(c => c.type === 'expense');
             const catContainer = document.getElementById('categoryStatsContainer');
             
@@ -616,7 +1207,7 @@
                 catContainer.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">尚無支出數據可供統計</p>`;
             } else {
                 catContainer.innerHTML = expCategories.map(cat => {
-                    const catSum = targetTxs.filter(t => t.type === 'expense' && t.category_id === cat.id).reduce((s, t) => s + Number(t.amount), 0);
+                    const catSum = targetTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.category_id === cat.id).reduce((s, t) => s + Number(t.amount), 0);
                     const percent = totalExp > 0 ? ((catSum / totalExp) * 100).toFixed(1) : 0;
                     return `
                         <div class="space-y-1">
@@ -636,7 +1227,7 @@
         function renderDayBlock(date, txList, diaryList) {
             const dayDiaries = diaryList.filter(d => d.date === date);
             const dayTxs = txList.filter(t => t.date === date);
-            const dayExpense = dayTxs.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
+            const dayExpense = dayTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((sum, t) => sum + Number(t.amount), 0);
 
             let html = `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
                 <div class="flex justify-between items-center border-b pb-2">
@@ -673,16 +1264,18 @@
                     const payer = members.find(m => m.id === t.payer_id) || { name: '成員', avatar: '👤' };
                     const isExpense = t.type === 'expense';
                     const isOwner = currentUser && t.userUid === currentUser.uid;
+                    const isReimburse = t.tag === 'reimburse';
+
                     html += `<div class="flex justify-between items-center bg-gray-50 hover:bg-gray-100 p-2.5 rounded-xl transition text-xs">
                         <div class="flex items-center space-x-2.5">
                             <span class="text-base bg-white p-1.5 rounded-lg shadow-xs">${cat.icon}</span>
                             <div>
                                 <p class="font-bold text-gray-800">${t.note || cat.name}</p>
-                                <p class="text-[10px] text-gray-500">${payer.avatar} ${payer.name} · ${cat.name} ${t.visibility === 'private' ? '🔒' : ''}</p>
+                                <p class="text-[10px] text-gray-500">${payer.avatar} ${payer.name} · ${cat.name} ${t.visibility === 'private' ? '🔒' : ''} ${isReimburse ? '<span class="text-purple-600 font-bold ml-1">🏷️ 報帳</span>' : ''}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="font-extrabold ${isExpense ? 'text-gray-900' : 'text-emerald-600'}">${isExpense ? '-' : '+'}$${Number(t.amount).toLocaleString()}</span>
+                            <span class="font-extrabold ${isExpense ? (isReimburse ? 'text-gray-400 line-through' : 'text-gray-900') : 'text-emerald-600'}">${isExpense ? '-' : '+'}$${Number(t.amount).toLocaleString()}</span>
                             ${isOwner ? `<button onclick="editTransaction('${t.id}')" class="text-gray-400 hover:text-indigo-600 p-1"><i class="fa-solid fa-pen text-[10px]"></i></button><button onclick="deleteTransaction('${t.id}')" class="text-gray-400 hover:text-red-500 p-1"><i class="fa-solid fa-trash text-[10px]"></i></button>` : ''}
                         </div>
                     </div>`;
@@ -693,7 +1286,7 @@
             return html;
         }
 
-        // ================= CRUD 與管理功能 =================
+        // ================= CRUD 與 Modal 控制 =================
         function openTransactionModal(txId = null) {
             document.getElementById('transactionModal').classList.remove('hidden');
             if (txId) {
@@ -706,13 +1299,15 @@
                 document.getElementById('txPayer').value = t.payer_id;
                 document.getElementById('txDate').value = t.date;
                 document.getElementById('txVisibility').value = t.visibility;
-                document.getElementById('txNote').value = t.note;
+                document.getElementById('txTag').value = t.tag || 'normal';
+                document.getElementById('txNote').value = t.note || '';
             } else {
                 document.getElementById('txModalTitle').innerText = '新增記帳';
                 document.getElementById('transactionForm').reset();
                 document.getElementById('txId').value = '';
                 setTxType('expense');
                 document.getElementById('txDate').value = getTodayStr();
+                document.getElementById('txTag').value = 'normal';
             }
         }
         function closeTransactionModal() { document.getElementById('transactionModal').classList.add('hidden'); }
@@ -727,6 +1322,7 @@
                 payer_id: document.getElementById('txPayer').value,
                 date: document.getElementById('txDate').value,
                 visibility: document.getElementById('txVisibility').value,
+                tag: document.getElementById('txTag').value,
                 note: document.getElementById('txNote').value,
                 userUid: currentUser ? currentUser.uid : 'demo1'
             };
@@ -814,6 +1410,308 @@
             }
         }
 
+        // --- 循環記帳表單邏輯 ---
+        function openRecurringTxModal(id = null) {
+            document.getElementById('recurringTxModal').classList.remove('hidden');
+            if (id) {
+                document.getElementById('recTxModalTitle').innerText = '修改循環記帳設定';
+                const item = recurringTransactions.find(x => x.id === id);
+                document.getElementById('recTxId').value = item.id;
+                setRecTxType(item.type);
+                document.getElementById('recTxAmount').value = item.amount;
+                document.getElementById('recTxCategory').value = item.category_id;
+                document.getElementById('recTxPayer').value = item.payer_id;
+                document.getElementById('recTxFrequency').value = item.frequency;
+                document.getElementById('recTxNextDate').value = item.nextDate;
+                document.getElementById('recTxVisibility').value = item.visibility || 'public';
+                document.getElementById('recTxNote').value = item.note || '';
+            } else {
+                document.getElementById('recTxModalTitle').innerText = '新增循環記帳設定';
+                document.getElementById('recurringTxForm').reset();
+                document.getElementById('recTxId').value = '';
+                setRecTxType('expense');
+                document.getElementById('recTxNextDate').value = getTodayStr();
+                document.getElementById('recTxVisibility').value = 'public';
+            }
+        }
+        function closeRecurringTxModal() { document.getElementById('recurringTxModal').classList.add('hidden'); }
+
+        async function saveRecurringTx(e) {
+            e.preventDefault();
+            const id = document.getElementById('recTxId').value;
+            const data = {
+                type: currentRecTxType,
+                amount: Number(document.getElementById('recTxAmount').value),
+                category_id: document.getElementById('recTxCategory').value,
+                payer_id: document.getElementById('recTxPayer').value,
+                frequency: document.getElementById('recTxFrequency').value,
+                nextDate: document.getElementById('recTxNextDate').value,
+                visibility: document.getElementById('recTxVisibility').value,
+                note: document.getElementById('recTxNote').value,
+                userUid: currentUser ? currentUser.uid : 'demo1'
+            };
+            if (db) {
+                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringTransactions', id), data);
+                else await window.fbModules.addDoc(window.fbModules.collection(db, 'recurringTransactions'), data);
+            } else {
+                if (id) {
+                    const idx = recurringTransactions.findIndex(x => x.id === id);
+                    if (idx !== -1) recurringTransactions[idx] = { id, ...data };
+                } else {
+                    recurringTransactions.push({ id: 'rt_' + Date.now(), ...data });
+                }
+                saveData();
+                renderApp();
+            }
+            closeRecurringTxModal();
+        }
+
+        async function deleteRecurringTx(id) {
+            if (confirm('確定要刪除這項循環記帳設定嗎？')) {
+                if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'recurringTransactions', id));
+                else { recurringTransactions = recurringTransactions.filter(r => r.id !== id); saveData(); renderApp(); }
+            }
+        }
+
+        // --- 循環事件表單邏輯 ---
+        function openRecurringEventModal(id = null) {
+            document.getElementById('recurringEventModal').classList.remove('hidden');
+            if (id) {
+                document.getElementById('recEventModalTitle').innerText = '修改循環事件';
+                const item = recurringEvents.find(x => x.id === id);
+                document.getElementById('recEventId').value = item.id;
+                document.getElementById('recEventTitle').value = item.title;
+                document.getElementById('recEventFrequency').value = item.frequency;
+                document.getElementById('recEventNextDate').value = item.nextDate;
+                document.getElementById('recEventRemindDays').value = item.remindDays !== undefined ? item.remindDays : 3;
+                document.getElementById('recEventVisibility').value = item.visibility || 'public';
+                document.getElementById('recEventNote').value = item.note || '';
+            } else {
+                document.getElementById('recEventModalTitle').innerText = '新增循環事件';
+                document.getElementById('recurringEventForm').reset();
+                document.getElementById('recEventId').value = '';
+                document.getElementById('recEventNextDate').value = getTodayStr();
+                document.getElementById('recEventRemindDays').value = 3;
+                document.getElementById('recEventVisibility').value = 'public';
+            }
+        }
+        function closeRecurringEventModal() { document.getElementById('recurringEventModal').classList.add('hidden'); }
+
+        async function saveRecurringEvent(e) {
+            e.preventDefault();
+            const id = document.getElementById('recEventId').value;
+            const data = {
+                title: document.getElementById('recEventTitle').value,
+                frequency: document.getElementById('recEventFrequency').value,
+                nextDate: document.getElementById('recEventNextDate').value,
+                remindDays: Number(document.getElementById('recEventRemindDays').value || 3),
+                visibility: document.getElementById('recEventVisibility').value,
+                note: document.getElementById('recEventNote').value,
+                userUid: currentUser ? currentUser.uid : 'demo1'
+            };
+            if (db) {
+                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringEvents', id), data);
+                else await window.fbModules.addDoc(window.fbModules.collection(db, 'recurringEvents'), data);
+            } else {
+                if (id) {
+                    const idx = recurringEvents.findIndex(x => x.id === id);
+                    if (idx !== -1) recurringEvents[idx] = { id, ...data };
+                } else {
+                    recurringEvents.push({ id: 're_' + Date.now(), ...data });
+                }
+                saveData();
+                renderApp();
+            }
+            closeRecurringEventModal();
+        }
+
+        async function advanceRecurringEventDate(id) {
+            const re = recurringEvents.find(x => x.id === id);
+            if (!re) return;
+            const nextDate = calculateNextDate(re.nextDate, re.frequency);
+            if (db) {
+                await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringEvents', id), { nextDate });
+            } else {
+                re.nextDate = nextDate;
+                saveData();
+                renderApp();
+            }
+        }
+
+        async function deleteRecurringEvent(id) {
+            if (confirm('確定要刪除這項循環事件嗎？')) {
+                if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'recurringEvents', id));
+                else { recurringEvents = recurringEvents.filter(r => r.id !== id); saveData(); renderApp(); }
+            }
+        }
+
+        // --- 事件提醒表單邏輯 ---
+        function openReminderModal(id = null) {
+            document.getElementById('reminderModal').classList.remove('hidden');
+            if (id) {
+                document.getElementById('reminderModalTitle').innerText = '修改事件提醒';
+                const item = reminders.find(x => x.id === id);
+                document.getElementById('reminderId').value = item.id;
+                document.getElementById('reminderTitle').value = item.title;
+                document.getElementById('reminderDate').value = item.date;
+                document.getElementById('reminderTime').value = item.time || '';
+                document.getElementById('reminderVisibility').value = item.visibility || 'public';
+                document.getElementById('reminderNote').value = item.note || '';
+            } else {
+                document.getElementById('reminderModalTitle').innerText = '新增事件提醒';
+                document.getElementById('reminderForm').reset();
+                document.getElementById('reminderId').value = '';
+                document.getElementById('reminderDate').value = getTodayStr();
+                document.getElementById('reminderVisibility').value = 'public';
+            }
+        }
+        function closeReminderModal() { document.getElementById('reminderModal').classList.add('hidden'); }
+
+        async function saveReminder(e) {
+            e.preventDefault();
+            const id = document.getElementById('reminderId').value;
+            const data = {
+                title: document.getElementById('reminderTitle').value,
+                date: document.getElementById('reminderDate').value,
+                time: document.getElementById('reminderTime').value,
+                visibility: document.getElementById('reminderVisibility').value,
+                note: document.getElementById('reminderNote').value,
+                completed: false,
+                userUid: currentUser ? currentUser.uid : 'demo1'
+            };
+            if (db) {
+                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'reminders', id), data);
+                else await window.fbModules.addDoc(window.fbModules.collection(db, 'reminders'), data);
+            } else {
+                if (id) {
+                    const idx = reminders.findIndex(x => x.id === id);
+                    if (idx !== -1) reminders[idx] = { ...reminders[idx], ...data };
+                } else {
+                    reminders.push({ id: 'rm_' + Date.now(), ...data });
+                }
+                saveData();
+                renderApp();
+            }
+            closeReminderModal();
+        }
+
+        async function toggleReminderComplete(id) {
+            const rm = reminders.find(x => x.id === id);
+            if (!rm) return;
+            const completed = !rm.completed;
+            if (db) {
+                await window.fbModules.updateDoc(window.fbModules.doc(db, 'reminders', id), { completed });
+            } else {
+                rm.completed = completed;
+                saveData();
+                renderApp();
+            }
+        }
+
+        async function deleteReminder(id) {
+            if (confirm('確定要刪除這項提醒嗎？')) {
+                if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'reminders', id));
+                else { reminders = reminders.filter(r => r.id !== id); saveData(); renderApp(); }
+            }
+        }
+
+        // ================= 資料匯出與備份邏輯 (CSV / JSON) =================
+        function downloadFile(content, fileName, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // 匯出記帳資料為 CSV (使用 \uFEFF UTF-8 BOM 避免 Excel 亂碼)
+        function exportTransactionsCSV() {
+            if (transactions.length === 0) { alert('目前沒有記帳資料可供匯出'); return; }
+            let csv = '\uFEFF'; // UTF-8 BOM Header
+            csv += '日期,類型,金額,分類,付款人,權限,報帳性質,備註說明\n';
+
+            transactions.forEach(t => {
+                const cat = categories.find(c => c.id === t.category_id) || { name: '其他' };
+                const payer = members.find(m => m.id === t.payer_id) || { name: '成員' };
+                const typeName = t.type === 'expense' ? '支出' : '收入';
+                const visName = t.visibility === 'private' ? '私密' : '公開';
+                const tag = t.tag === 'reimburse' ? '報帳' : '一般';
+                const noteClean = `"${(t.note || '').replace(/"/g, '""')}"`;
+
+                csv += `${t.date},${typeName},${t.amount},"${cat.name}","${payer.name}",${visName},${tag},${noteClean}\n`;
+            });
+
+            downloadFile(csv, `家庭記帳紀錄_${getTodayStr()}.csv`, 'text/csv;charset=utf-8;');
+        }
+
+        // 匯出家庭日記資料為 CSV
+        function exportDiariesCSV() {
+            if (diaries.length === 0) { alert('目前沒有日記資料可供匯出'); return; }
+            let csv = '\uFEFF';
+            csv += '日期,標題,天氣,心情,作者,權限,內文\n';
+
+            diaries.forEach(d => {
+                const author = members.find(m => m.id === d.author_id) || { name: '成員' };
+                const visName = d.visibility === 'private' ? '私密' : '公開';
+                const titleClean = `"${(d.title || '').replace(/"/g, '""')}"`;
+                const contentClean = `"${(d.content || '').replace(/"/g, '""')}"`;
+
+                csv += `${d.date},${titleClean},"${d.weather || ''}","${d.mood || ''}","${author.name}",${visName},${contentClean}\n`;
+            });
+
+            downloadFile(csv, `家庭日記紀錄_${getTodayStr()}.csv`, 'text/csv;charset=utf-8;');
+        }
+
+        // 備份全系統 JSON 檔案
+        function exportFullBackupJSON() {
+            const backupData = {
+                exportDate: new Date().toISOString(),
+                members,
+                categories,
+                transactions,
+                diaries,
+                recurringTransactions,
+                recurringEvents,
+                reminders
+            };
+            const jsonStr = JSON.stringify(backupData, null, 2);
+            downloadFile(jsonStr, `家庭記帳完整備份_${getTodayStr()}.json`, 'application/json');
+        }
+
+        // 還原全系統 JSON 檔案
+        function importFullBackupJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (confirm('還原資料將會覆蓋當前本地儲存的紀錄，確定要進行還原嗎？')) {
+                        if (data.members) members = data.members;
+                        if (data.categories) categories = data.categories;
+                        if (data.transactions) transactions = data.transactions;
+                        if (data.diaries) diaries = data.diaries;
+                        if (data.recurringTransactions) recurringTransactions = data.recurringTransactions;
+                        if (data.recurringEvents) recurringEvents = data.recurringEvents;
+                        if (data.reminders) reminders = data.reminders;
+
+                        saveData();
+                        alert('資料還原成功！');
+                        location.reload();
+                    }
+                } catch (err) {
+                    alert('檔案格式不正確，還原失敗');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- 設定與管理選單 ---
         function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); renderAdminLists(); }
         function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); initFormSelects(); renderApp(); }
 
