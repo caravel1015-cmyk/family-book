@@ -833,6 +833,14 @@
             renderRecurringView();
         }
 
+        function getDefaultPayerId() {
+            if (!currentUser) return members[0] ? members[0].id : '';
+            // 嘗試透過名稱配對成員
+            const matched = members.find(m => currentUser.name && m.name.includes(currentUser.name.replace(/ \(Demo\)/, '')));
+            if (matched) return matched.id;
+            return members[0] ? members[0].id : '';
+        }
+
         function initFormSelects() {
             const payerOptions = `<option value="">-- 不設定 --</option>` + members.map(m => `<option value="${m.id}">${m.avatar} ${m.name}</option>`).join('');
             
@@ -843,7 +851,6 @@
             document.getElementById('recTxPayer').innerHTML = payerOptions;
         }
 
-        // 處理付款人變更：若選「不設定」則強迫瀏覽權限為公開並停用
         function handlePayerChange(formType) {
             const payerId = document.getElementById(formType === 'tx' ? 'txPayer' : 'recTxPayer').value;
             const visSelect = document.getElementById(formType === 'tx' ? 'txVisibility' : 'recTxVisibility');
@@ -1385,7 +1392,7 @@
                 document.getElementById('transactionForm').reset();
                 document.getElementById('txId').value = '';
                 setTxType('expense');
-                document.getElementById('txPayer').value = '';
+                document.getElementById('txPayer').value = getDefaultPayerId();
                 handlePayerChange('tx');
                 document.getElementById('txDate').value = getTodayStr();
                 document.getElementById('txTag').value = 'normal';
@@ -1515,7 +1522,7 @@
                 document.getElementById('recurringTxForm').reset();
                 document.getElementById('recTxId').value = '';
                 setRecTxType('expense');
-                document.getElementById('recTxPayer').value = '';
+                document.getElementById('recTxPayer').value = getDefaultPayerId();
                 handlePayerChange('rectx');
                 document.getElementById('recTxNextDate').value = getTodayStr();
                 document.getElementById('recTxVisibility').value = 'public';
