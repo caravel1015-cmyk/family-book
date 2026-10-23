@@ -229,20 +229,44 @@
             </section>
         </div>
 
-        <!-- 統計分析視圖 -->
+        <!-- 統計分析視圖 (已新增日期區間選擇) -->
         <div id="viewStats" class="space-y-6 hidden">
+            <!-- 範圍與權限切換 -->
             <section class="grid grid-cols-2 gap-2 bg-gray-200 p-1 rounded-xl text-xs font-bold">
                 <button id="statsScopePublic" onclick="setStatsScope('public')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">🌐 家庭公開統計</button>
                 <button id="statsScopePersonal" onclick="setStatsScope('personal')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">🔒 個人專區統計</button>
             </section>
 
+            <!-- 自由日期區間篩選面板 -->
+            <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold text-gray-800 text-xs flex items-center gap-1">
+                        <i class="fa-solid fa-calendar-alt text-primary"></i> 統計日期區間
+                    </h3>
+                    <div class="space-x-1">
+                        <button onclick="setStatsDatePreset('thisMonth')" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg font-bold hover:bg-indigo-100 transition">本月</button>
+                        <button onclick="setStatsDatePreset('all')" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold hover:bg-gray-200 transition">全部</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-500 mb-1">起始日期</label>
+                        <input type="date" id="statsStartDate" onchange="renderStatsView()" class="w-full border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-500 mb-1">結束日期</label>
+                        <input type="date" id="statsEndDate" onchange="renderStatsView()" class="w-full border border-gray-200 rounded-xl px-2.5 py-1.5 text-xs focus:ring-2 focus:ring-primary focus:outline-none">
+                    </div>
+                </div>
+            </section>
+
             <section class="grid grid-cols-2 gap-3">
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <p class="text-xs text-gray-500 font-semibold">總支出 (不含報帳)</p>
+                    <p class="text-xs text-gray-500 font-semibold">區間總支出 (不含報帳)</p>
                     <p id="statsTotalExpense" class="text-xl font-extrabold text-red-600 mt-1">$0</p>
                 </div>
                 <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <p class="text-xs text-gray-500 font-semibold">總收入</p>
+                    <p class="text-xs text-gray-500 font-semibold">區間總收入</p>
                     <p id="statsTotalIncome" class="text-xl font-extrabold text-emerald-600 mt-1">$0</p>
                 </div>
             </section>
@@ -516,7 +540,7 @@
         </div>
     </div>
 
-    <!-- Modal：設定與管理 (已新增 CSV 匯出與完整 JSON 備份) -->
+    <!-- Modal：設定與管理 -->
     <div id="settingsModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
@@ -524,7 +548,7 @@
                 <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
             <div class="space-y-6">
-                <!-- 1. CSV / JSON 資料備份匯出專區 -->
+                <!-- 資料備份與匯出 -->
                 <div class="bg-emerald-50/80 p-4 rounded-2xl border border-emerald-100 space-y-3">
                     <h4 class="font-bold text-sm text-emerald-900 flex items-center gap-1.5">
                         <i class="fa-solid fa-file-csv text-emerald-600 text-base"></i> 資料備份與匯出
@@ -549,7 +573,7 @@
                     </div>
                 </div>
 
-                <!-- 2. Firebase 設定 -->
+                <!-- Firebase 設定 -->
                 <div class="bg-indigo-50/70 p-4 rounded-2xl border border-indigo-100 space-y-2">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-sm text-indigo-900"><i class="fa-solid fa-cloud text-indigo-600 mr-1"></i> Firebase 雲端設定</h4>
@@ -559,7 +583,7 @@
                     <button onclick="saveFirebaseConfig()" class="w-full bg-indigo-600 text-white py-2 rounded-lg text-xs font-bold shadow-sm">儲存設定並連結</button>
                 </div>
 
-                <!-- 3. 成員管理 -->
+                <!-- 成員管理 -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
                     <h4 class="font-bold text-sm text-gray-800 mb-3"><i class="fa-solid fa-users text-primary mr-1"></i> 家庭成員管理</h4>
                     <div id="memberListAdmin" class="space-y-2 mb-3"></div>
@@ -570,7 +594,7 @@
                     </form>
                 </div>
 
-                <!-- 4. 分類管理 -->
+                <!-- 分類管理 -->
                 <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200">
                     <h4 class="font-bold text-sm text-gray-800 mb-3"><i class="fa-solid fa-tags text-secondary mr-1"></i> 記帳分類管理</h4>
                     <div id="categoryListAdmin" class="space-y-2 mb-3 max-h-40 overflow-y-auto"></div>
@@ -641,6 +665,17 @@
 
         function getTodayStr() { return new Date().toISOString().split('T')[0]; }
 
+        function getThisMonthRange() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+            return {
+                start: `${year}-${month}-01`,
+                end: `${year}-${month}-${lastDay}`
+            };
+        }
+
         function calculateNextDate(startDateStr, frequency) {
             let date = new Date(startDateStr);
             if (isNaN(date.getTime())) date = new Date();
@@ -656,6 +691,12 @@
         window.onload = function() {
             initFirebase();
             initFormSelects();
+            
+            // 初始化統計分析日期預設為本月
+            const monthRange = getThisMonthRange();
+            document.getElementById('statsStartDate').value = monthRange.start;
+            document.getElementById('statsEndDate').value = monthRange.end;
+
             renderApp();
             document.getElementById('txDate').value = getTodayStr();
             document.getElementById('diaryDate').value = getTodayStr();
@@ -839,6 +880,18 @@
                 btnPersonal.className = "py-2 rounded-lg bg-white shadow-sm text-emerald-600 transition";
                 btnPublic.className = "py-2 rounded-lg text-gray-600 hover:text-gray-900 transition";
                 label.innerText = "🔒 個人專區";
+            }
+            renderStatsView();
+        }
+
+        function setStatsDatePreset(preset) {
+            if (preset === 'thisMonth') {
+                const range = getThisMonthRange();
+                document.getElementById('statsStartDate').value = range.start;
+                document.getElementById('statsEndDate').value = range.end;
+            } else if (preset === 'all') {
+                document.getElementById('statsStartDate').value = '';
+                document.getElementById('statsEndDate').value = '';
             }
             renderStatsView();
         }
@@ -1194,6 +1247,17 @@
                 targetTxs = transactions.filter(t => t.userUid === currentUser.uid);
             }
 
+            // 套用日期區間篩選
+            const startDate = document.getElementById('statsStartDate').value;
+            const endDate = document.getElementById('statsEndDate').value;
+
+            if (startDate) {
+                targetTxs = targetTxs.filter(t => t.date >= startDate);
+            }
+            if (endDate) {
+                targetTxs = targetTxs.filter(t => t.date <= endDate);
+            }
+
             const totalExp = targetTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
             const totalInc = targetTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
 
@@ -1204,7 +1268,7 @@
             const catContainer = document.getElementById('categoryStatsContainer');
             
             if (totalExp === 0) {
-                catContainer.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">尚無支出數據可供統計</p>`;
+                catContainer.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">選定區間內尚無支出數據可供統計</p>`;
             } else {
                 catContainer.innerHTML = expCategories.map(cat => {
                     const catSum = targetTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.category_id === cat.id).reduce((s, t) => s + Number(t.amount), 0);
@@ -1628,10 +1692,9 @@
             URL.revokeObjectURL(url);
         }
 
-        // 匯出記帳資料為 CSV (使用 \uFEFF UTF-8 BOM 避免 Excel 亂碼)
         function exportTransactionsCSV() {
             if (transactions.length === 0) { alert('目前沒有記帳資料可供匯出'); return; }
-            let csv = '\uFEFF'; // UTF-8 BOM Header
+            let csv = '\uFEFF';
             csv += '日期,類型,金額,分類,付款人,權限,報帳性質,備註說明\n';
 
             transactions.forEach(t => {
@@ -1648,7 +1711,6 @@
             downloadFile(csv, `家庭記帳紀錄_${getTodayStr()}.csv`, 'text/csv;charset=utf-8;');
         }
 
-        // 匯出家庭日記資料為 CSV
         function exportDiariesCSV() {
             if (diaries.length === 0) { alert('目前沒有日記資料可供匯出'); return; }
             let csv = '\uFEFF';
@@ -1666,7 +1728,6 @@
             downloadFile(csv, `家庭日記紀錄_${getTodayStr()}.csv`, 'text/csv;charset=utf-8;');
         }
 
-        // 備份全系統 JSON 檔案
         function exportFullBackupJSON() {
             const backupData = {
                 exportDate: new Date().toISOString(),
@@ -1682,7 +1743,6 @@
             downloadFile(jsonStr, `家庭記帳完整備份_${getTodayStr()}.json`, 'application/json');
         }
 
-        // 還原全系統 JSON 檔案
         function importFullBackupJSON(event) {
             const file = event.target.files[0];
             if (!file) return;
