@@ -2710,6 +2710,8 @@
             const cat = categories.find(c => c.id === catId);
             if (!cat || !cat.subcategories) return;
 
+            if (!confirm(`確定要刪除「${subName}」這個次分類嗎？`)) return;
+
             cat.subcategories = cat.subcategories.filter(s => s !== subName);
 
             if (db) {
