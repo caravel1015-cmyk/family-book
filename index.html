@@ -1267,10 +1267,10 @@
             let options = '';
 
             categories.forEach(c => {
-                options += `<option value="cat_${c.id}">${c.icon} ${c.name} (主分類)</option>`;
+                options += `<option value="cat:${c.id}">${c.icon} ${c.name} (主分類)</option>`;
                 if (c.subcategories && c.subcategories.length > 0) {
                     c.subcategories.forEach(sub => {
-                        options += `<option value="sub_${c.id}:::${sub}">&nbsp;&nbsp;&nbsp;&nbsp;↳ ${sub}</option>`;
+                        options += `<option value="sub:${c.id}:::${sub}">&nbsp;&nbsp;&nbsp;&nbsp;↳ ${sub}</option>`;
                     });
                 }
             });
@@ -1968,14 +1968,14 @@
             let barData = [];
 
             if (filterVal) {
-                const [type, idVal] = filterVal.split('_');
-                if (type === 'cat') {
+                if (filterVal.startsWith('cat:')) {
+                    const catId = filterVal.substring(4);
                     barData = periods.map(p => {
-                        return scopeTxs.filter(t => t.category_id === idVal && t.tag !== 'reimburse' && t.date.startsWith(p))
+                        return scopeTxs.filter(t => t.category_id === catId && t.tag !== 'reimburse' && t.date.startsWith(p))
                                        .reduce((s, t) => s + Number(t.amount), 0);
                     });
-                } else if (type === 'sub') {
-                    const [catId, subName] = idVal.split(':::');
+                } else if (filterVal.startsWith('sub:')) {
+                    const [catId, subName] = filterVal.substring(4).split(':::');
                     barData = periods.map(p => {
                         return scopeTxs.filter(t => t.category_id === catId && t.subcategory === subName && t.tag !== 'reimburse' && t.date.startsWith(p))
                                        .reduce((s, t) => s + Number(t.amount), 0);
