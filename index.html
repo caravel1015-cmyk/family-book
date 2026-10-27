@@ -2007,7 +2007,7 @@
 
         // Modal Controls
         function openTransactionModal(txId = null) {
-            document.getElementById('txForm').reset();
+            document.getElementById('transactionForm').reset();
             document.getElementById('txId').value = '';
             document.getElementById('txModalTitle').innerText = txId ? '編輯記帳' : '新增記帳';
 
@@ -2467,7 +2467,7 @@
         }
 
         function renderSettingsView() {
-            // 成員清單
+            // 成員清單 (增加修改成員按鈕)
             const memberContainer = document.getElementById('memberListAdmin');
             memberContainer.innerHTML = members.map(m => `
                 <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-gray-100 text-xs shadow-2xs">
@@ -2476,21 +2476,29 @@
                         <span class="font-bold text-gray-800">${m.name}</span>
                         <span class="text-gray-400 font-mono truncate text-[11px]">${m.email || '無授權 Email'}</span>
                     </div>
-                    <button onclick="deleteMember('${m.id}')" class="text-gray-300 hover:text-red-500 p-1 transition"><i class="fa-solid fa-trash"></i></button>
+                    <div class="flex items-center space-x-1 shrink-0">
+                        <button onclick="editMember('${m.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs" title="修改成員"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteMember('${m.id}')" class="text-gray-300 hover:text-red-500 p-1 text-xs" title="刪除成員"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                 </div>
             `).join('');
 
-            // 分類與次分類清單
+            // 分類與次分類清單 (增加修改分類與上下移動排序按鈕)
             const catContainer = document.getElementById('categoryListAdmin');
-            catContainer.innerHTML = categories.map(c => `
+            catContainer.innerHTML = categories.map((c, index) => `
                 <div class="bg-white p-3 rounded-xl border border-gray-100 space-y-2 text-xs shadow-2xs">
                     <div class="flex justify-between items-center font-bold">
                         <div class="flex items-center space-x-1.5">
-                            <span>${c.icon}</span>
+                            <span class="text-base">${c.icon}</span>
                             <span class="text-gray-800">${c.name}</span>
                             <span class="text-[10px] ${c.type === 'expense' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'} px-1.5 py-0.5 rounded">${c.type === 'expense' ? '支出' : '收入'}</span>
                         </div>
-                        <button onclick="deleteCategory('${c.id}')" class="text-gray-300 hover:text-red-500 p-1"><i class="fa-solid fa-trash"></i></button>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="moveCategory('${c.id}', -1)" ${index === 0 ? 'disabled class="opacity-30 cursor-not-allowed text-gray-400 p-1 text-xs"' : 'class="text-gray-400 hover:text-primary p-1 text-xs"'} title="上移"><i class="fa-solid fa-arrow-up"></i></button>
+                            <button onclick="moveCategory('${c.id}', 1)" ${index === categories.length - 1 ? 'disabled class="opacity-30 cursor-not-allowed text-gray-400 p-1 text-xs"' : 'class="text-gray-400 hover:text-primary p-1 text-xs"'} title="下移"><i class="fa-solid fa-arrow-down"></i></button>
+                            <button onclick="editCategory('${c.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs ml-1" title="修改分類"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteCategory('${c.id}')" class="text-gray-300 hover:text-red-500 p-1 text-xs" title="刪除分類"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </div>
 
                     <!-- 次分類清單 -->
@@ -2533,6 +2541,34 @@
             renderSettingsView();
         }
 
+        async function editMember(id) {
+            const m = members.find(item => item.id === id);
+            if (!m) return;
+
+            const newName = prompt('請輸入成員名稱：', m.name);
+            if (newName === null) return;
+            
+            const newAvatar = prompt('請輸入成員 Emoji 圖示：', m.avatar || '👤');
+            if (newAvatar === null) return;
+
+            const newEmail = prompt('請輸入對應的 Google Email (無則留空)：', m.email || '');
+            if (newEmail === null) return;
+
+            m.name = newName.trim() || m.name;
+            m.avatar = newAvatar.trim() || '👤';
+            m.email = newEmail.trim().toLowerCase();
+
+            if (db) {
+                await window.fbModules.setDoc(window.fbModules.doc(db, 'familyMembers', id), m);
+            } else {
+                saveDataLocallyOnly();
+            }
+
+            initFormSelects();
+            renderSettingsView();
+            renderApp();
+        }
+
         async function deleteMember(id) {
             if (members.length <= 1) { alert('至少需保留一名家庭成員！'); return; }
             if (!confirm('確定要刪除此家庭成員嗎？')) return;
@@ -2572,6 +2608,60 @@
             document.getElementById('newCategoryName').value = '';
             initFormSelects();
             renderSettingsView();
+        }
+
+        async function editCategory(id) {
+            const c = categories.find(item => item.id === id);
+            if (!c) return;
+
+            const newName = prompt('請輸入主分類名稱：', c.name);
+            if (newName === null) return;
+
+            const newIcon = prompt('請輸入主分類 Icon/Emoji：', c.icon || '📌');
+            if (newIcon === null) return;
+
+            const typeChoice = prompt('請輸入分類類型（填寫 "1" 為支出，填寫 "2" 為收入）：', c.type === 'expense' ? '1' : '2');
+            if (typeChoice === null) return;
+
+            c.name = newName.trim() || c.name;
+            c.icon = newIcon.trim() || '📌';
+            if (typeChoice === '1') c.type = 'expense';
+            else if (typeChoice === '2') c.type = 'income';
+
+            if (db) {
+                await window.fbModules.setDoc(window.fbModules.doc(db, 'categories', id), c);
+            } else {
+                saveDataLocallyOnly();
+            }
+
+            initFormSelects();
+            renderSettingsView();
+            renderApp();
+        }
+
+        async function moveCategory(id, direction) {
+            const index = categories.findIndex(c => c.id === id);
+            if (index === -1) return;
+            
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= categories.length) return;
+
+            // 交換位置
+            const temp = categories[index];
+            categories[index] = categories[newIndex];
+            categories[newIndex] = temp;
+
+            saveDataLocallyOnly();
+
+            if (db) {
+                for (let c of categories) {
+                    await window.fbModules.setDoc(window.fbModules.doc(db, 'categories', c.id), c);
+                }
+            }
+
+            initFormSelects();
+            renderSettingsView();
+            renderApp();
         }
 
         async function deleteCategory(id) {
