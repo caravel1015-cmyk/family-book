@@ -25,11 +25,11 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         window.fbModules = {
             initializeApp, getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
-            getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy
+            getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, setDoc, getDocs
         };
     </script>
 </head>
@@ -58,16 +58,16 @@
 
         <!-- 四分頁導覽標籤 -->
         <div class="max-w-md mx-auto px-2 flex border-t border-gray-100 overflow-x-auto">
-            <button id="tabTimeline" onclick="switchTab('timeline')" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition whitespace-nowrap">
+            <button id="tabTimeline" onclick="switchTab('timeline', true)" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition whitespace-nowrap">
                 <i class="fa-solid fa-house-chimney mr-1"></i> 家庭時軸
             </button>
-            <button id="tabPersonal" onclick="switchTab('personal')" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
+            <button id="tabPersonal" onclick="switchTab('personal', true)" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
                 <i class="fa-solid fa-user mr-1"></i> 個人專區
             </button>
-            <button id="tabRecurring" onclick="switchTab('recurring')" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
+            <button id="tabRecurring" onclick="switchTab('recurring', true)" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
                 <i class="fa-solid fa-arrows-rotate mr-1"></i> 週期與提醒
             </button>
-            <button id="tabStats" onclick="switchTab('stats')" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
+            <button id="tabStats" onclick="switchTab('stats', true)" class="flex-1 py-2.5 px-1 text-center text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-700 transition whitespace-nowrap">
                 <i class="fa-solid fa-chart-pie mr-1"></i> 統計分析
             </button>
         </div>
@@ -83,7 +83,7 @@
                     <h3 class="font-bold text-xs text-amber-900 flex items-center gap-1.5">
                         <i class="fa-solid fa-bell text-amber-600 animate-bounce"></i> 即將到期事件提醒
                     </h3>
-                    <button onclick="switchTab('recurring'); switchRecurringSubTab('reminder');" class="text-[10px] text-amber-700 font-bold hover:underline">
+                    <button onclick="switchTab('recurring', true); switchRecurringSubTab('reminder');" class="text-[10px] text-amber-700 font-bold hover:underline">
                         管理全部提醒 →
                     </button>
                 </div>
@@ -284,14 +284,12 @@
                     <h3 class="font-bold text-gray-800 text-xs flex items-center gap-1.5">
                         <i class="fa-solid fa-sliders text-indigo-600"></i> 趨勢圖檢視設定
                     </h3>
-                    <!-- 頻率切換：每月 / 每年 -->
                     <div class="grid grid-cols-2 gap-1 bg-gray-100 p-0.5 rounded-lg text-xs font-bold">
                         <button id="trendModeMonthly" onclick="setTrendMode('monthly')" class="px-3 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition">每月趨勢</button>
                         <button id="trendModeYearly" onclick="setTrendMode('yearly')" class="px-3 py-1 rounded-md text-gray-600 transition">每年趨勢</button>
                     </div>
                 </div>
 
-                <!-- 自訂區間選單 -->
                 <div class="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
                     <div>
                         <label id="startLabel" class="block text-[10px] font-semibold text-gray-500 mb-1">起始月份</label>
@@ -788,19 +786,22 @@
 
     <!-- JavaScript 核心邏輯 -->
     <script>
-        let members = JSON.parse(localStorage.getItem('family_members')) || [
+        const initialMembersSeed = [
             { id: 'm1', name: '爸爸', avatar: '👨', email: '' },
             { id: 'm2', name: '媽媽', avatar: '👩', email: '' },
             { id: 'm3', name: '小寶', avatar: '👦', email: '' }
         ];
 
-        let categories = JSON.parse(localStorage.getItem('family_categories')) || [
+        const initialCategoriesSeed = [
             { id: 'c1', name: '餐飲美食', type: 'expense', icon: '🍜', subcategories: ['早餐', '午餐', '晚餐', '飲料點心'] },
             { id: 'c2', name: '交通油資', type: 'expense', icon: '⛽', subcategories: ['加油', '大眾運輸', '停車費', '保養維修'] },
             { id: 'c3', name: '購物娛樂', type: 'expense', icon: '🛍️', subcategories: ['服飾日用', '遊戲娛樂', '旅遊費用'] },
             { id: 'c4', name: '居家水電', type: 'expense', icon: '🏠', subcategories: ['水費', '電費', '瓦斯費', '網路通訊', '房屋租金'] },
             { id: 'c5', name: '薪資收入', type: 'income', icon: '💰', subcategories: ['月薪', '獎金', '投資副業'] }
         ];
+
+        let members = JSON.parse(localStorage.getItem('family_members')) || initialMembersSeed;
+        let categories = JSON.parse(localStorage.getItem('family_categories')) || initialCategoriesSeed;
 
         categories.forEach(c => { if (!Array.isArray(c.subcategories)) c.subcategories = []; });
 
@@ -835,6 +836,9 @@
         let trendMode = 'monthly';
         let db = null;
         let auth = null;
+
+        // 返回鍵防退出控制變數
+        let lastBackPressTime = 0;
 
         function getTodayStr() { return new Date().toISOString().split('T')[0]; }
 
@@ -889,7 +893,52 @@
             document.getElementById('recTxNextDate').value = getTodayStr();
             document.getElementById('recEventNextDate').value = getTodayStr();
             document.getElementById('reminderDate').value = getTodayStr();
+
+            // 初始化 History API 狀態以攔截返回鍵
+            history.pushState({ page: 'home', tab: currentTab }, '', '');
+            window.addEventListener('popstate', handlePopState);
         };
+
+        // 監聽手機返回鍵 / 瀏覽器上一頁事件
+        function handlePopState(event) {
+            // 1. 如果有任何開啟中的 Modal，優先關閉 Modal 而不是切換分頁
+            if (closeAnyOpenModal()) {
+                history.pushState({ page: 'home', tab: currentTab }, '', '');
+                return;
+            }
+
+            // 2. 如果目前不在首分頁（timeline），切回首分頁
+            if (currentTab !== 'timeline') {
+                switchTab('timeline', false); // false 代表不重複推入 history
+                return;
+            }
+
+            // 3. 若已經在首分頁且無 Modal，實作「再點一次退出」提醒
+            const now = Date.now();
+            if (now - lastBackPressTime < 2000) {
+                // 兩秒內再點一次，允許真正退出網頁（退回歷史上一頁）
+                history.back();
+            } else {
+                lastBackPressTime = now;
+                alert('再點一次返回鍵將退出目前網頁');
+                // 重新推入狀態以保持留在頁面內
+                history.pushState({ page: 'home', tab: currentTab }, '', '');
+            }
+        }
+
+        // 檢查並關閉任意開啟中的 Modal，若有關閉則回傳 true
+        function closeAnyOpenModal() {
+            let closedAny = false;
+            const modals = ['transactionModal', 'diaryModal', 'recurringTxModal', 'recurringEventModal', 'reminderModal', 'settingsModal'];
+            modals.forEach(modalId => {
+                const el = document.getElementById(modalId);
+                if (el && !el.classList.contains('hidden')) {
+                    el.classList.add('hidden');
+                    closedAny = true;
+                }
+            });
+            return closedAny;
+        }
 
         function initTrendRangeInputs() {
             const now = new Date();
@@ -967,6 +1016,9 @@
                     auth = window.fbModules.getAuth(app);
                     db = window.fbModules.getFirestore(app);
 
+                    // 初次雲端即時監聽與預設種子資料初始化
+                    listenCloudData();
+
                     window.fbModules.onAuthStateChanged(auth, async (user) => {
                         if (user) {
                             const userEmail = (user.email || '').toLowerCase().trim();
@@ -992,7 +1044,6 @@
                                 memberId: matchedMember.id
                             };
                             updateAuthUI();
-                            listenCloudData();
                         } else {
                             currentUser = null;
                             updateAuthUI();
@@ -1035,33 +1086,102 @@
             }
         }
 
+        async function seedFirestoreDefaultsIfEmpty() {
+            if (!db) return;
+            try {
+                // 檢查 members
+                const memSnap = await window.fbModules.getDocs(window.fbModules.collection(db, 'familyMembers'));
+                if (memSnap.empty) {
+                    for (let m of initialMembersSeed) {
+                        await window.fbModules.setDoc(window.fbModules.doc(db, 'familyMembers', m.id), m);
+                    }
+                }
+
+                // 檢查 categories
+                const catSnap = await window.fbModules.getDocs(window.fbModules.collection(db, 'categories'));
+                if (catSnap.empty) {
+                    for (let c of initialCategoriesSeed) {
+                        await window.fbModules.setDoc(window.fbModules.doc(db, 'categories', c.id), c);
+                    }
+                }
+            } catch (e) {
+                console.warn("自動初始化雲端預設分類與成員失敗或無權限：", e);
+            }
+        }
+
         function listenCloudData() {
             if (!db) return;
+
+            // 檢查並寫入初始成員與分類資料
+            seedFirestoreDefaultsIfEmpty();
+
+            // 1. 成員資料即時同步
+            window.fbModules.onSnapshot(window.fbModules.collection(db, 'familyMembers'), (snap) => {
+                if (!snap.empty) {
+                    members = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    saveDataLocallyOnly();
+                    initFormSelects();
+                    renderSettingsView();
+                    renderApp();
+                }
+            });
+
+            // 2. 分類資料即時同步
+            window.fbModules.onSnapshot(window.fbModules.collection(db, 'categories'), (snap) => {
+                if (!snap.empty) {
+                    categories = snap.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            ...data,
+                            subcategories: Array.isArray(data.subcategories) ? data.subcategories : []
+                        };
+                    });
+                    saveDataLocallyOnly();
+                    initFormSelects();
+                    renderSettingsView();
+                    renderApp();
+                }
+            });
+
+            // 3. 記帳紀錄同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'transactions'), (snap) => {
                 transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
             });
+
+            // 4. 日記同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'diaries'), (snap) => {
                 diaries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
             });
+
+            // 5. 循環記帳同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'recurringTransactions'), (snap) => {
                 recurringTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
             });
+
+            // 6. 循環事件同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'recurringEvents'), (snap) => {
                 recurringEvents = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
             });
+
+            // 7. 事件提醒同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'reminders'), (snap) => {
                 reminders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
             });
         }
 
-        function saveData() {
+        function saveDataLocallyOnly() {
             localStorage.setItem('family_members', JSON.stringify(members));
             localStorage.setItem('family_categories', JSON.stringify(categories));
+        }
+
+        function saveData() {
+            saveDataLocallyOnly();
             if (!db) {
                 localStorage.setItem('family_transactions', JSON.stringify(transactions));
                 localStorage.setItem('family_diaries', JSON.stringify(diaries));
@@ -1071,8 +1191,11 @@
             }
         }
 
-        function switchTab(tab) {
+        function switchTab(tab, pushHistory = true) {
             currentTab = tab;
+            if (pushHistory) {
+                history.pushState({ page: 'home', tab: tab }, '', '');
+            }
             const tabs = ['timeline', 'personal', 'recurring', 'stats'];
             tabs.forEach(t => {
                 const btn = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}`);
@@ -1604,301 +1727,298 @@
                 saveData();
             }
 
-            if (showNotice) {
-                alert(`已成功產生記帳！下次執行日期已更新為：${nextDate}`);
-                renderApp();
-            }
+            if (showNotice) alert('成功產生記帳資料，並已將下次執行日更新至下一期！');
+            renderApp();
+        }
+
+        function renderDayBlock(date, txs, diars) {
+            const dayTxs = txs.filter(t => t.date === date);
+            const dayDiaries = diars.filter(d => d.date === date);
+
+            const dayExpense = dayTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
+            const dayIncome = dayTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+
+            return `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden space-y-0.5">
+                    <div class="bg-gray-50/80 px-4 py-2.5 flex justify-between items-center border-b border-gray-100">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-xs text-gray-700">${date}</span>
+                        </div>
+                        <div class="text-xs space-x-2 font-semibold">
+                            ${dayExpense > 0 ? `<span class="text-red-500">支出 $${dayExpense.toLocaleString()}</span>` : ''}
+                            ${dayIncome > 0 ? `<span class="text-emerald-600">收入 $${dayIncome.toLocaleString()}</span>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="p-3 space-y-2">
+                        ${dayTxs.map(t => {
+                            const cat = categories.find(c => c.id === t.category_id) || { name: '其他', icon: '📌' };
+                            const payer = members.find(m => m.id === t.payer_id) || { name: '不設定', avatar: '📌' };
+                            const isOwner = currentUser && t.userUid === currentUser.uid;
+                            const isPrivate = t.visibility === 'private';
+                            const isReimburse = t.tag === 'reimburse';
+
+                            return `
+                                <div class="flex justify-between items-center py-1.5 px-2 hover:bg-gray-50 rounded-xl transition group">
+                                    <div class="flex items-center space-x-3 truncate">
+                                        <span class="text-lg bg-gray-100 p-2 rounded-xl shrink-0">${cat.icon}</span>
+                                        <div class="truncate">
+                                            <p class="font-bold text-xs text-gray-800 flex items-center gap-1 truncate">
+                                                <span>${cat.name}</span>
+                                                ${t.subcategory ? `<span class="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-normal shrink-0">${t.subcategory}</span>` : ''}
+                                                ${isReimburse ? '<span class="text-[10px] bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-bold shrink-0">📌 報帳</span>' : ''}
+                                                ${isPrivate ? '<span class="text-[10px] bg-gray-100 text-gray-500 px-1 rounded shrink-0">🔒</span>' : ''}
+                                            </p>
+                                            <p class="text-[11px] text-gray-400 mt-0.5 truncate">${t.payer_id ? payer.avatar + ' ' + payer.name : '👤 不設定'} ${t.note ? '· ' + t.note : ''}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-2 shrink-0">
+                                        <span class="font-extrabold text-xs ${isReimburse ? 'text-amber-600 line-through' : t.type === 'expense' ? 'text-red-500' : 'text-emerald-600'}">
+                                            ${t.type === 'expense' ? '-' : '+'}$${Number(t.amount).toLocaleString()}
+                                        </span>
+                                        ${isOwner ? `
+                                            <div class="hidden group-hover:flex space-x-1">
+                                                <button onclick="openTransactionModal('${t.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+                                                <button onclick="deleteTransaction('${t.id}')" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+
+                        ${dayDiaries.map(d => {
+                            const author = members.find(m => m.id === d.author_id) || { name: '成員', avatar: '👤' };
+                            const isOwner = currentUser && d.userUid === currentUser.uid;
+                            const isPrivate = d.visibility === 'private';
+
+                            return `
+                                <div class="bg-amber-50/60 p-3 rounded-xl border border-amber-100/80 space-y-1.5 relative group">
+                                    <div class="flex justify-between items-center">
+                                        <span class="font-bold text-xs text-amber-900 flex items-center gap-1.5">
+                                            <span>📖 ${d.title}</span>
+                                            ${d.mood && d.mood !== '無' ? `<span class="text-xs">${d.mood}</span>` : ''}
+                                            ${d.weather && d.weather !== '無' ? `<span class="text-[10px] bg-white/80 px-1.5 py-0.5 rounded border border-amber-200 text-amber-800">${d.weather}</span>` : ''}
+                                            ${isPrivate ? '<span class="text-[10px] bg-amber-100 text-amber-800 px-1 rounded">🔒</span>' : ''}
+                                        </span>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-[11px] text-amber-700/80">${author.avatar} ${author.name}</span>
+                                            ${isOwner ? `
+                                                <div class="hidden group-hover:flex space-x-1">
+                                                    <button onclick="openDiaryModal('${d.id}')" class="text-amber-700/60 hover:text-indigo-600 p-0.5 text-xs"><i class="fa-solid fa-pen"></i></button>
+                                                    <button onclick="deleteDiary('${d.id}')" class="text-amber-700/60 hover:text-red-500 p-0.5 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    </div>
+                                    ${d.content ? `<p class="text-xs text-gray-700 leading-relaxed whitespace-pre-line">${d.content}</p>` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         function renderStatsView() {
-            let targetTxs = [];
+            const startStr = document.getElementById('statsStartDate').value;
+            const endStr = document.getElementById('statsEndDate').value;
+
+            let statsTxs = transactions;
             if (currentStatsScope === 'public') {
-                targetTxs = transactions.filter(t => t.visibility === 'public');
+                statsTxs = statsTxs.filter(t => t.visibility === 'public');
             } else {
-                if (!currentUser) {
-                    document.getElementById('categoryStatsContainer').innerHTML = `<p class="text-center text-xs text-gray-400 py-4">請先登入帳號以查看個人專區統計</p>`;
-                    document.getElementById('statsTotalExpense').innerText = '$0';
-                    document.getElementById('statsTotalIncome').innerText = '$0';
-                    return;
-                }
-                targetTxs = transactions.filter(t => t.userUid === currentUser.uid);
+                statsTxs = statsTxs.filter(t => currentUser && t.userUid === currentUser.uid);
             }
 
-            const startDate = document.getElementById('statsStartDate').value;
-            const endDate = document.getElementById('statsEndDate').value;
+            if (startStr) statsTxs = statsTxs.filter(t => t.date >= startStr);
+            if (endStr) statsTxs = statsTxs.filter(t => t.date <= endStr);
 
-            let filteredIntervalTxs = targetTxs;
-            if (startDate) filteredIntervalTxs = filteredIntervalTxs.filter(t => t.date >= startDate);
-            if (endDate) filteredIntervalTxs = filteredIntervalTxs.filter(t => t.date <= endDate);
-
-            const totalExp = filteredIntervalTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
-            const totalInc = filteredIntervalTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+            const totalExp = statsTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
+            const totalInc = statsTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
 
             document.getElementById('statsTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
             document.getElementById('statsTotalIncome').innerText = `$${totalInc.toLocaleString()}`;
 
-            const expCategories = categories.filter(c => c.type === 'expense');
+            // 1. 分類佔比
             const catContainer = document.getElementById('categoryStatsContainer');
-            
-            if (totalExp === 0) {
-                catContainer.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">選定區間內尚無支出數據可供統計</p>`;
+            const expTxs = statsTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse');
+
+            const catMap = {};
+            expTxs.forEach(t => {
+                catMap[t.category_id] = (catMap[t.category_id] || 0) + Number(t.amount);
+            });
+
+            const sortedCats = Object.keys(catMap).map(cid => {
+                const catObj = categories.find(c => c.id === cid) || { name: '其他', icon: '📌' };
+                return { id: cid, name: catObj.name, icon: catObj.icon, total: catMap[cid] };
+            }).sort((a, b) => b.total - a.total);
+
+            if (sortedCats.length === 0) {
+                catContainer.innerHTML = `<div class="text-center py-6 text-gray-400 text-xs">區間內無支出紀錄</div>`;
             } else {
-                catContainer.innerHTML = expCategories.map(cat => {
-                    const catTxs = filteredIntervalTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.category_id === cat.id);
-                    const catSum = catTxs.reduce((s, t) => s + Number(t.amount), 0);
-                    if (catSum === 0) return '';
-
-                    const percent = totalExp > 0 ? ((catSum / totalExp) * 100).toFixed(1) : 0;
-
-                    let subcatDetailsHtml = '';
-                    if (cat.subcategories && cat.subcategories.length > 0) {
-                        const subMap = {};
-                        catTxs.forEach(t => {
-                            const subName = t.subcategory || '不分類';
-                            subMap[subName] = (subMap[subName] || 0) + Number(t.amount);
-                        });
-
-                        const subItems = Object.keys(subMap).map(subName => {
-                            return `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-[10px]">${subName}: $${subMap[subName].toLocaleString()}</span>`;
-                        }).join(' ');
-
-                        if (subItems) {
-                            subcatDetailsHtml = `<div class="flex flex-wrap gap-1.5 pt-1 pl-2">${subItems}</div>`;
-                        }
-                    }
-
+                catContainer.innerHTML = sortedCats.map(c => {
+                    const pct = totalExp > 0 ? Math.round((c.total / totalExp) * 100) : 0;
                     return `
-                        <div class="space-y-1 bg-gray-50/50 p-2.5 rounded-xl border border-gray-100">
+                        <div class="space-y-1">
                             <div class="flex justify-between items-center text-xs">
-                                <span class="font-bold text-gray-700">${cat.icon} ${cat.name}</span>
-                                <span class="font-bold text-gray-900">$${catSum.toLocaleString()} <span class="text-gray-400 font-normal">(${percent}%)</span></span>
+                                <span class="font-bold text-gray-700">${c.icon} ${c.name}</span>
+                                <span class="font-extrabold text-gray-900">$${c.total.toLocaleString()} (${pct}%)</span>
                             </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                                <div class="bg-primary h-2 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                            <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                                <div class="bg-primary h-full transition-all duration-300" style="width: ${pct}%"></div>
                             </div>
-                            ${subcatDetailsHtml}
                         </div>
                     `;
                 }).join('');
             }
 
-            renderCustomCharts(targetTxs);
+            // 2. 趨勢圖邏輯 (折線圖 & 長條圖)
+            renderTrendCharts(statsTxs);
         }
 
-        function renderCustomCharts(txScope) {
-            let periodList = [];
+        function renderTrendCharts(scopeTxs) {
+            let periods = [];
+            const isMonthly = (trendMode === 'monthly');
 
-            if (trendMode === 'monthly') {
-                const startMStr = document.getElementById('trendStartMonth').value;
-                const endMStr = document.getElementById('trendEndMonth').value;
-                if (startMStr && endMStr && startMStr <= endMStr) {
-                    let [sY, sM] = startMStr.split('-').map(Number);
-                    let [eY, eM] = endMStr.split('-').map(Number);
-                    
-                    let currY = sY, currM = sM;
-                    while (currY < eY || (currY === eY && currM <= eM)) {
-                        periodList.push(`${currY}-${String(currM).padStart(2, '0')}`);
-                        currM++;
-                        if (currM > 12) { currM = 1; currY++; }
-                        if (periodList.length > 60) break;
-                    }
+            if (isMonthly) {
+                const startYM = document.getElementById('trendStartMonth').value || '2026-01';
+                const endYM = document.getElementById('trendEndMonth').value || '2026-12';
+
+                let cur = new Date(startYM + '-01');
+                const end = new Date(endYM + '-01');
+
+                while (cur <= end) {
+                    const y = cur.getFullYear();
+                    const m = String(cur.getMonth() + 1).padStart(2, '0');
+                    periods.push(`${y}-${m}`);
+                    cur.setMonth(cur.getMonth() + 1);
                 }
-                if (periodList.length === 0) periodList = [getTodayStr().slice(0, 7)];
             } else {
-                const startY = Number(document.getElementById('trendStartYear').value);
-                const endY = Number(document.getElementById('trendEndYear').value);
-                if (startY <= endY) {
-                    for (let y = startY; y <= endY; y++) {
-                        periodList.push(String(y));
-                    }
+                const startY = Number(document.getElementById('trendStartYear').value || 2023);
+                const endY = Number(document.getElementById('trendEndYear').value || 2026);
+
+                for (let y = startY; y <= endY; y++) {
+                    periods.push(String(y));
                 }
-                if (periodList.length === 0) periodList = [String(new Date().getFullYear())];
             }
 
-            document.getElementById('trendRangeLabel').innerText = `自訂區間 (${periodList[0]} ~ ${periodList[periodList.length - 1]})`;
+            if (periods.length === 0) periods = [isMonthly ? '2026-10' : '2026'];
 
-            const chartData = periodList.map(periodStr => {
-                const periodTxs = txScope.filter(t => (t.date || '').startsWith(periodStr));
-                const exp = periodTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
-                const inc = periodTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-                return { period: periodStr, expense: exp, income: inc };
+            document.getElementById('trendRangeLabel').innerText = `${periods[0]} ~ ${periods[periods.length - 1]}`;
+
+            // 計算收支折線圖數據
+            const expenseData = periods.map(p => {
+                return scopeTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(p))
+                               .reduce((s, t) => s + Number(t.amount), 0);
             });
 
-            const colCount = periodList.length;
-            const gridColsClass = `grid-cols-${Math.min(Math.max(colCount, 1), 12)}`;
+            const incomeData = periods.map(p => {
+                return scopeTxs.filter(t => t.type === 'income' && t.date.startsWith(p))
+                              .reduce((s, t) => s + Number(t.amount), 0);
+            });
 
-            const xLabelsHtml = periodList.map(p => `<div>${trendMode === 'monthly' ? p.replace(/^\d{4}-/, '') : p}</div>`).join('');
-            const xLabelsContainer = document.getElementById('lineChartXLabels');
-            xLabelsContainer.className = `grid ${gridColsClass} text-[10px] text-gray-500 text-center pt-1 font-mono`;
-            xLabelsContainer.innerHTML = xLabelsHtml;
+            const maxVal = Math.max(...expenseData, ...incomeData, 100);
+            const gridMax = Math.ceil(maxVal / 400) * 400 || 400;
 
-            const barLabelsContainer = document.getElementById('barChartXLabels');
-            barLabelsContainer.className = `grid ${gridColsClass} text-[10px] text-gray-500 text-center pt-1 font-mono`;
-            barLabelsContainer.innerHTML = xLabelsHtml;
-
-            const maxLineVal = Math.max(...chartData.map(d => Math.max(d.expense, d.income)), 1000);
-            document.getElementById('lineChartY3').innerText = Math.round(maxLineVal).toLocaleString();
-            document.getElementById('lineChartY2').innerText = Math.round(maxLineVal * 0.75).toLocaleString();
-            document.getElementById('lineChartY1').innerText = Math.round(maxLineVal * 0.5).toLocaleString();
-            document.getElementById('lineChartY0.5').innerText = Math.round(maxLineVal * 0.25).toLocaleString();
+            document.getElementById('lineChartY3').innerText = gridMax.toLocaleString();
+            document.getElementById('lineChartY2').innerText = Math.round(gridMax * 0.75).toLocaleString();
+            document.getElementById('lineChartY1').innerText = Math.round(gridMax * 0.5).toLocaleString();
+            document.getElementById('lineChartY0.5').innerText = Math.round(gridMax * 0.25).toLocaleString();
 
             const svg = document.getElementById('incomeExpenseLineSvg');
-            svg.innerHTML = '';
-
-            const svgWidth = 300, svgHeight = 150;
-            const stepX = svgWidth / (periodList.length - 1 || 1);
+            const n = periods.length;
 
             let expPoints = [];
             let incPoints = [];
 
-            chartData.forEach((d, idx) => {
-                const x = periodList.length === 1 ? svgWidth / 2 : idx * stepX;
-                const yExp = svgHeight - (d.expense / maxLineVal) * (svgHeight - 15) - 10;
-                const yInc = svgHeight - (d.income / maxLineVal) * (svgHeight - 15) - 10;
-                expPoints.push({ x, y: yExp });
-                incPoints.push({ x, y: yInc });
-            });
+            for (let i = 0; i < n; i++) {
+                const x = n > 1 ? (i / (n - 1)) * 100 : 50;
+                const yExp = 100 - (expenseData[i] / gridMax) * 100;
+                const yInc = 100 - (incomeData[i] / gridMax) * 100;
+                expPoints.push(`${x},${yExp}`);
+                incPoints.push(`${x},${yInc}`);
+            }
 
-            let expPathD = `M ${expPoints[0].x} ${expPoints[0].y}`;
-            let incPathD = `M ${incPoints[0].x} ${incPoints[0].y}`;
-            expPoints.forEach((p, i) => { if (i > 0) expPathD += ` L ${p.x} ${p.y}`; });
-            incPoints.forEach((p, i) => { if (i > 0) incPathD += ` L ${p.x} ${p.y}`; });
-
-            svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
             svg.innerHTML = `
-                <path d="${expPathD}" fill="none" stroke="#f43f5e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="${incPathD}" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                ${expPoints.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#ffffff" stroke="#f43f5e" stroke-width="2"></circle>`).join('')}
-                ${incPoints.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#ffffff" stroke="#10b981" stroke-width="2"></circle>`).join('')}
+                <polyline fill="none" stroke="#EF4444" stroke-width="2.5" points="${expPoints.join(' ')}" />
+                <polyline fill="none" stroke="#10B981" stroke-width="2.5" points="${incPoints.join(' ')}" />
+                ${expPoints.map(p => {
+                    const [px, py] = p.split(',');
+                    return `<circle cx="${px}%" cy="${py}%" r="3.5" fill="#EF4444" />`;
+                }).join('')}
+                ${incPoints.map(p => {
+                    const [px, py] = p.split(',');
+                    return `<circle cx="${px}%" cy="${py}%" r="3.5" fill="#10B981" />`;
+                }).join('')}
             `;
 
-            const categoryFilterVal = document.getElementById('statsTrendCategoryFilter').value || 'all';
-            const barData = periodList.map(periodStr => {
-                const periodTxs = txScope.filter(t => (t.date || '').startsWith(periodStr));
-                let amt = 0;
-                if (categoryFilterVal === 'all') {
-                    amt = periodTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
-                } else if (categoryFilterVal.startsWith('cat_')) {
-                    const catId = categoryFilterVal.replace('cat_', '');
-                    amt = periodTxs.filter(t => t.category_id === catId && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
-                } else if (categoryFilterVal.startsWith('sub_')) {
-                    const parts = categoryFilterVal.replace('sub_', '').split(':::');
-                    const catId = parts[0];
-                    const subName = parts[1];
-                    amt = periodTxs.filter(t => t.category_id === catId && t.subcategory === subName && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
-                }
-                return { period: periodStr, amount: amt };
-            });
+            // X 軸標籤
+            const xContainer = document.getElementById('lineChartXLabels');
+            xContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+            xContainer.innerHTML = periods.map(p => `<span>${isMonthly ? p.slice(2) : p}</span>`).join('');
 
-            const maxBarVal = Math.max(...barData.map(b => b.amount), 500);
-            document.getElementById('barChartY3').innerText = Math.round(maxBarVal).toLocaleString();
-            document.getElementById('barChartY2').innerText = Math.round(maxBarVal * 0.75).toLocaleString();
-            document.getElementById('barChartY1').innerText = Math.round(maxBarVal * 0.5).toLocaleString();
-            document.getElementById('barChartY0.5').innerText = Math.round(maxBarVal * 0.25).toLocaleString();
+            // 3. 長條圖數據（自選分類）
+            const filterVal = document.getElementById('statsTrendCategoryFilter').value;
+            let barData = [];
+
+            if (filterVal) {
+                const [type, idVal] = filterVal.split('_');
+                if (type === 'cat') {
+                    barData = periods.map(p => {
+                        return scopeTxs.filter(t => t.category_id === idVal && t.date.startsWith(p))
+                                       .reduce((s, t) => s + Number(t.amount), 0);
+                    });
+                } else if (type === 'sub') {
+                    const [catId, subName] = idVal.split(':::');
+                    barData = periods.map(p => {
+                        return scopeTxs.filter(t => t.category_id === catId && t.subcategory === subName && t.date.startsWith(p))
+                                       .reduce((s, t) => s + Number(t.amount), 0);
+                    });
+                }
+            } else {
+                barData = periods.map(() => 0);
+            }
+
+            const maxBarVal = Math.max(...barData, 100);
+            const gridBarMax = Math.ceil(maxBarVal / 400) * 400 || 400;
+
+            document.getElementById('barChartY3').innerText = gridBarMax.toLocaleString();
+            document.getElementById('barChartY2').innerText = Math.round(gridBarMax * 0.75).toLocaleString();
+            document.getElementById('barChartY1').innerText = Math.round(gridBarMax * 0.5).toLocaleString();
+            document.getElementById('barChartY0.5').innerText = Math.round(gridBarMax * 0.25).toLocaleString();
 
             const barsContainer = document.getElementById('barChartBarsContainer');
-            barsContainer.className = `absolute inset-0 grid ${gridColsClass} items-end px-2 pb-0.5`;
-            barsContainer.innerHTML = barData.map(b => {
-                const heightPct = maxBarVal > 0 ? Math.min(Math.round((b.amount / maxBarVal) * 100), 100) : 0;
+            barsContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+            barsContainer.innerHTML = barData.map(v => {
+                const heightPct = Math.min((v / gridBarMax) * 100, 100);
                 return `
-                    <div class="h-full flex items-end justify-center px-0.5">
-                        <div class="w-full bg-indigo-500 rounded-t-lg transition-all duration-300 hover:bg-indigo-600" style="height: ${heightPct}%" title="${b.period}: $${b.amount.toLocaleString()}"></div>
+                    <div class="flex flex-col items-center justify-end h-full group relative">
+                        <div class="w-3/5 bg-amber-500 hover:bg-amber-600 rounded-t-md transition-all duration-200" style="height: ${heightPct}%"></div>
+                        <span class="absolute -top-6 text-[9px] bg-gray-800 text-white px-1 rounded opacity-0 group-hover:opacity-100 transition">$${v}</span>
                     </div>
                 `;
             }).join('');
+
+            const barXContainer = document.getElementById('barChartXLabels');
+            barXContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+            barXContainer.innerHTML = periods.map(p => `<span>${isMonthly ? p.slice(2) : p}</span>`).join('');
         }
 
-        function renderDayBlock(date, txList, diaryList) {
-            const dayDiaries = diaryList.filter(d => d.date === date);
-            const dayTxs = txList.filter(t => t.date === date);
-            const dayExpense = dayTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((sum, t) => sum + Number(t.amount), 0);
+        // Modal Controls
+        function openTransactionModal(txId = null) {
+            document.getElementById('txForm').reset();
+            document.getElementById('txId').value = '';
+            document.getElementById('txModalTitle').innerText = txId ? '編輯記帳' : '新增記帳';
 
-            let html = `<div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-3">
-                <div class="flex justify-between items-center border-b pb-2">
-                    <span class="font-bold text-sm text-indigo-600"><i class="fa-regular fa-calendar-days mr-1"></i> ${date}</span>
-                    <span class="text-xs text-gray-500 font-medium">當日支出: <strong class="text-red-500">$${dayExpense.toLocaleString()}</strong></span>
-                </div>`;
-
-            if (dayDiaries.length > 0) {
-                html += `<div class="space-y-2 border-b pb-3">`;
-                dayDiaries.forEach(d => {
-                    const isOwner = currentUser && d.userUid === currentUser.uid;
-                    const isPrivate = d.visibility === 'private';
-                    html += `
-                        <div class="bg-amber-50/60 p-3 rounded-xl border border-amber-100 space-y-1">
-                            <div class="flex justify-between items-start">
-                                <h4 class="font-bold text-xs text-amber-900 flex items-center gap-1">
-                                    <span>📖 ${d.title}</span>
-                                    ${d.mood && d.mood !== '無' ? `<span>${d.mood}</span>` : ''}
-                                    ${d.weather && d.weather !== '無' ? `<span class="text-[10px] text-gray-500">(${d.weather})</span>` : ''}
-                                    ${isPrivate ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-1 py-0.5 rounded">🔒</span>' : ''}
-                                </h4>
-                                ${isOwner ? `
-                                    <div class="flex space-x-1 shrink-0">
-                                        <button onclick="openDiaryModal('${d.id}')" class="text-gray-400 hover:text-indigo-600 p-0.5 text-xs"><i class="fa-solid fa-pen"></i></button>
-                                        <button onclick="deleteDiary('${d.id}')" class="text-gray-400 hover:text-red-500 p-0.5 text-xs"><i class="fa-solid fa-trash"></i></button>
-                                    </div>
-                                ` : ''}
-                            </div>
-                            <p class="text-xs text-gray-700 whitespace-pre-line">${d.content}</p>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            }
-
-            if (dayTxs.length > 0) {
-                html += `<div class="space-y-2">`;
-                dayTxs.forEach(t => {
-                    const cat = categories.find(c => c.id === t.category_id) || { name: '其他', icon: '📌' };
-                    const payer = members.find(m => m.id === t.payer_id) || { name: '不設定', avatar: '📌' };
-                    const isOwner = currentUser && t.userUid === currentUser.uid;
-                    const isPrivate = t.visibility === 'private';
-                    const isReimburse = t.tag === 'reimburse';
-                    const subcatDisplay = t.subcategory ? ` › ${t.subcategory}` : '';
-
-                    html += `
-                        <div class="flex items-center justify-between p-2 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition">
-                            <div class="flex items-center space-x-2.5 truncate pr-2">
-                                <span class="text-lg bg-white p-1.5 rounded-lg border border-gray-100">${cat.icon}</span>
-                                <div class="truncate">
-                                    <p class="text-xs font-bold text-gray-800 flex items-center gap-1 truncate">
-                                        <span>${t.note || cat.name}</span>
-                                        <span class="text-[10px] text-gray-500 font-normal">(${cat.name}${subcatDisplay})</span>
-                                        ${isReimburse ? '<span class="text-[9px] bg-amber-100 text-amber-800 px-1 rounded font-bold">📌報帳</span>' : ''}
-                                        ${isPrivate ? '<span class="text-[9px] bg-gray-200 text-gray-600 px-1 rounded">🔒</span>' : ''}
-                                    </p>
-                                    <p class="text-[10px] text-gray-400">${t.payer_id ? payer.avatar + ' ' + payer.name : '👤 不設定'}</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-2 shrink-0">
-                                <span class="font-extrabold text-xs ${t.type === 'expense' ? (isReimburse ? 'text-gray-400 line-through' : 'text-red-600') : 'text-emerald-600'}">
-                                    ${t.type === 'expense' ? '-' : '+'}$${Number(t.amount).toLocaleString()}
-                                </span>
-                                ${isOwner ? `
-                                    <button onclick="openTransactionModal('${t.id}')" class="text-gray-300 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
-                                    <button onclick="deleteTransaction('${t.id}')" class="text-gray-300 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            }
-
-            html += `</div>`;
-            return html;
-        }
-
-        function openTransactionModal(id = null) {
             initFormSelects();
-            const modal = document.getElementById('transactionModal');
-            modal.classList.remove('hidden');
-            
-            if (id) {
-                const t = transactions.find(x => x.id === id);
+            const defaultPayer = getDefaultPayerId();
+            document.getElementById('txPayer').value = defaultPayer;
+            handlePayerChange('tx');
+
+            if (txId) {
+                const t = transactions.find(x => x.id === txId);
                 if (t) {
-                    document.getElementById('txModalTitle').innerText = '編輯記帳';
                     document.getElementById('txId').value = t.id;
                     setTxType(t.type);
                     document.getElementById('txAmount').value = t.amount;
@@ -1906,22 +2026,18 @@
                     updateSubcategoryDropdown('tx');
                     document.getElementById('txSubcategory').value = t.subcategory || '';
                     document.getElementById('txPayer').value = t.payer_id || '';
-                    handlePayerChange('tx');
                     document.getElementById('txDate').value = t.date;
                     document.getElementById('txVisibility').value = t.visibility || 'public';
                     document.getElementById('txTag').value = t.tag || 'normal';
                     document.getElementById('txNote').value = t.note || '';
+                    handlePayerChange('tx');
                 }
             } else {
-                document.getElementById('txModalTitle').innerText = '新增記帳';
-                document.getElementById('txForm').reset();
-                document.getElementById('txId').value = '';
                 setTxType('expense');
                 document.getElementById('txDate').value = getTodayStr();
-                document.getElementById('txPayer').value = getDefaultPayerId();
-                handlePayerChange('tx');
-                document.getElementById('txVisibility').value = 'public';
             }
+
+            document.getElementById('transactionModal').classList.remove('hidden');
         }
 
         function closeTransactionModal() {
@@ -1931,30 +2047,31 @@
         async function saveTransaction(e) {
             e.preventDefault();
             const id = document.getElementById('txId').value;
-            const payerId = document.getElementById('txPayer').value;
-
-            const data = {
+            const txData = {
                 type: currentTxType,
                 amount: Number(document.getElementById('txAmount').value),
                 category_id: document.getElementById('txCategory').value,
-                subcategory: document.getElementById('txSubcategory').value || '',
-                payer_id: payerId,
+                subcategory: document.getElementById('txSubcategory').value,
+                payer_id: document.getElementById('txPayer').value,
                 date: document.getElementById('txDate').value,
-                visibility: payerId ? document.getElementById('txVisibility').value : 'private',
+                visibility: document.getElementById('txVisibility').value,
                 tag: document.getElementById('txTag').value,
                 note: document.getElementById('txNote').value.trim(),
                 userUid: currentUser ? currentUser.uid : 'demo1'
             };
 
             if (db) {
-                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'transactions', id), data);
-                else await window.fbModules.addDoc(window.fbModules.collection(db, 'transactions'), data);
+                if (id) {
+                    await window.fbModules.updateDoc(window.fbModules.doc(db, 'transactions', id), txData);
+                } else {
+                    await window.fbModules.addDoc(window.fbModules.collection(db, 'transactions'), txData);
+                }
             } else {
                 if (id) {
                     const idx = transactions.findIndex(t => t.id === id);
-                    if (idx !== -1) transactions[idx] = { id, ...data };
+                    if (idx !== -1) transactions[idx] = { id, ...txData };
                 } else {
-                    transactions.push({ id: 't_' + Date.now(), ...data });
+                    transactions.push({ id: 't_' + Date.now(), ...txData });
                 }
                 saveData();
                 renderApp();
@@ -1963,23 +2080,24 @@
         }
 
         async function deleteTransaction(id) {
-            if (!confirm('確定要刪除這筆記帳嗎？')) return;
-            if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'transactions', id));
-            else {
+            if (!confirm('確定要刪除這筆記帳紀錄嗎？')) return;
+            if (db) {
+                await window.fbModules.deleteDoc(window.fbModules.doc(db, 'transactions', id));
+            } else {
                 transactions = transactions.filter(t => t.id !== id);
                 saveData();
                 renderApp();
             }
         }
 
-        function openDiaryModal(id = null) {
-            const modal = document.getElementById('diaryModal');
-            modal.classList.remove('hidden');
+        function openDiaryModal(diaryId = null) {
+            document.getElementById('diaryForm').reset();
+            document.getElementById('diaryId').value = '';
+            document.getElementById('diaryModalTitle').innerText = diaryId ? '編輯日記' : '寫家庭日記';
 
-            if (id) {
-                const d = diaries.find(x => x.id === id);
+            if (diaryId) {
+                const d = diaries.find(x => x.id === diaryId);
                 if (d) {
-                    document.getElementById('diaryModalTitle').innerText = '編輯家庭日記';
                     document.getElementById('diaryId').value = d.id;
                     document.getElementById('diaryDate').value = d.date;
                     document.getElementById('diaryTitle').value = d.title;
@@ -1989,12 +2107,10 @@
                     document.getElementById('diaryContent').value = d.content || '';
                 }
             } else {
-                document.getElementById('diaryModalTitle').innerText = '寫家庭日記';
-                document.getElementById('diaryForm').reset();
-                document.getElementById('diaryId').value = '';
                 document.getElementById('diaryDate').value = getTodayStr();
-                document.getElementById('diaryVisibility').value = 'public';
             }
+
+            document.getElementById('diaryModal').classList.remove('hidden');
         }
 
         function closeDiaryModal() {
@@ -2004,7 +2120,10 @@
         async function saveDiary(e) {
             e.preventDefault();
             const id = document.getElementById('diaryId').value;
-            const data = {
+            const authorId = getDefaultPayerId();
+
+            const diaryData = {
+                author_id: authorId,
                 date: document.getElementById('diaryDate').value,
                 title: document.getElementById('diaryTitle').value.trim(),
                 mood: document.getElementById('diaryMood').value,
@@ -2015,14 +2134,17 @@
             };
 
             if (db) {
-                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'diaries', id), data);
-                else await window.fbModules.addDoc(window.fbModules.collection(db, 'diaries'), data);
+                if (id) {
+                    await window.fbModules.updateDoc(window.fbModules.doc(db, 'diaries', id), diaryData);
+                } else {
+                    await window.fbModules.addDoc(window.fbModules.collection(db, 'diaries'), diaryData);
+                }
             } else {
                 if (id) {
                     const idx = diaries.findIndex(d => d.id === id);
-                    if (idx !== -1) diaries[idx] = { id, ...data };
+                    if (idx !== -1) diaries[idx] = { id, ...diaryData };
                 } else {
-                    diaries.push({ id: 'd_' + Date.now(), ...data });
+                    diaries.push({ id: 'd_' + Date.now(), ...diaryData });
                 }
                 saveData();
                 renderApp();
@@ -2032,23 +2154,29 @@
 
         async function deleteDiary(id) {
             if (!confirm('確定要刪除這篇日記嗎？')) return;
-            if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'diaries', id));
-            else {
+            if (db) {
+                await window.fbModules.deleteDoc(window.fbModules.doc(db, 'diaries', id));
+            } else {
                 diaries = diaries.filter(d => d.id !== id);
                 saveData();
                 renderApp();
             }
         }
 
-        function openRecurringTxModal(id = null) {
-            initFormSelects();
-            const modal = document.getElementById('recurringTxModal');
-            modal.classList.remove('hidden');
+        function openRecurringTxModal(rtId = null) {
+            document.getElementById('recurringTxForm').reset();
+            document.getElementById('recTxId').value = '';
+            document.getElementById('recTxModalTitle').innerText = rtId ? '編輯循環記帳' : '新增循環記帳設定';
 
-            if (id) {
-                const rt = recurringTransactions.find(x => x.id === id);
+            initFormSelects();
+            const defaultPayer = getDefaultPayerId();
+            document.getElementById('recTxPayer').value = defaultPayer;
+            handlePayerChange('rectx');
+            toggleRecTxEndInput('never');
+
+            if (rtId) {
+                const rt = recurringTransactions.find(x => x.id === rtId);
                 if (rt) {
-                    document.getElementById('recTxModalTitle').innerText = '編輯循環記帳設定';
                     document.getElementById('recTxId').value = rt.id;
                     setRecTxType(rt.type);
                     document.getElementById('recTxAmount').value = rt.amount;
@@ -2056,31 +2184,28 @@
                     updateSubcategoryDropdown('rectx');
                     document.getElementById('recTxSubcategory').value = rt.subcategory || '';
                     document.getElementById('recTxPayer').value = rt.payer_id || '';
-                    handlePayerChange('rectx');
                     document.getElementById('recTxInterval').value = rt.interval || 1;
                     document.getElementById('recTxFreqUnit').value = rt.freqUnit || 'monthly';
                     document.getElementById('recTxNextDate').value = rt.nextDate;
 
                     const endType = rt.endType || 'never';
-                    const radio = document.querySelector(`input[name="recTxEndType"][value="${endType}"]`);
-                    if (radio) radio.checked = true;
+                    const rad = document.querySelector(`input[name="recTxEndType"][value="${endType}"]`);
+                    if (rad) rad.checked = true;
                     toggleRecTxEndInput(endType);
 
-                    document.getElementById('recTxEndDate').value = rt.endDate || '';
-                    document.getElementById('recTxEndCount').value = rt.endCount || '';
+                    if (rt.endDate) document.getElementById('recTxEndDate').value = rt.endDate;
+                    if (rt.endCount) document.getElementById('recTxEndCount').value = rt.endCount;
+
                     document.getElementById('recTxVisibility').value = rt.visibility || 'private';
                     document.getElementById('recTxNote').value = rt.note || '';
+                    handlePayerChange('rectx');
                 }
             } else {
-                document.getElementById('recTxModalTitle').innerText = '新增循環記帳設定';
-                document.getElementById('recurringTxForm').reset();
-                document.getElementById('recTxId').value = '';
                 setRecTxType('expense');
                 document.getElementById('recTxNextDate').value = getTodayStr();
-                document.getElementById('recTxPayer').value = getDefaultPayerId();
-                handlePayerChange('rectx');
-                toggleRecTxEndInput('never');
             }
+
+            document.getElementById('recurringTxModal').classList.remove('hidden');
         }
 
         function closeRecurringTxModal() {
@@ -2090,36 +2215,38 @@
         async function saveRecurringTx(e) {
             e.preventDefault();
             const id = document.getElementById('recTxId').value;
-            const payerId = document.getElementById('recTxPayer').value;
             const endType = document.querySelector('input[name="recTxEndType"]:checked').value;
 
-            const data = {
+            const recTxData = {
                 type: currentRecTxType,
                 amount: Number(document.getElementById('recTxAmount').value),
                 category_id: document.getElementById('recTxCategory').value,
-                subcategory: document.getElementById('recTxSubcategory').value || '',
-                payer_id: payerId,
+                subcategory: document.getElementById('recTxSubcategory').value,
+                payer_id: document.getElementById('recTxPayer').value,
                 interval: Number(document.getElementById('recTxInterval').value) || 1,
                 freqUnit: document.getElementById('recTxFreqUnit').value,
                 nextDate: document.getElementById('recTxNextDate').value,
                 endType: endType,
                 endDate: endType === 'date' ? document.getElementById('recTxEndDate').value : '',
                 endCount: endType === 'count' ? Number(document.getElementById('recTxEndCount').value) : null,
-                currentCount: 0,
-                visibility: payerId ? document.getElementById('recTxVisibility').value : 'private',
+                currentCount: id ? (recurringTransactions.find(x => x.id === id)?.currentCount || 0) : 0,
+                visibility: document.getElementById('recTxVisibility').value,
                 note: document.getElementById('recTxNote').value.trim(),
                 userUid: currentUser ? currentUser.uid : 'demo1'
             };
 
             if (db) {
-                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringTransactions', id), data);
-                else await window.fbModules.addDoc(window.fbModules.collection(db, 'recurringTransactions'), data);
+                if (id) {
+                    await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringTransactions', id), recTxData);
+                } else {
+                    await window.fbModules.addDoc(window.fbModules.collection(db, 'recurringTransactions'), recTxData);
+                }
             } else {
                 if (id) {
-                    const idx = recurringTransactions.findIndex(x => x.id === id);
-                    if (idx !== -1) recurringTransactions[idx] = { id, ...data };
+                    const idx = recurringTransactions.findIndex(rt => rt.id === id);
+                    if (idx !== -1) recurringTransactions[idx] = { id, ...recTxData };
                 } else {
-                    recurringTransactions.push({ id: 'rt_' + Date.now(), ...data });
+                    recurringTransactions.push({ id: 'rt_' + Date.now(), ...recTxData });
                 }
                 saveData();
                 renderApp();
@@ -2128,23 +2255,25 @@
         }
 
         async function deleteRecurringTx(id) {
-            if (!confirm('確定要刪除這筆循環記帳設定嗎？')) return;
-            if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'recurringTransactions', id));
-            else {
-                recurringTransactions = recurringTransactions.filter(x => x.id !== id);
+            if (!confirm('確定要刪除這項循環記帳設定嗎？')) return;
+            if (db) {
+                await window.fbModules.deleteDoc(window.fbModules.doc(db, 'recurringTransactions', id));
+            } else {
+                recurringTransactions = recurringTransactions.filter(rt => rt.id !== id);
                 saveData();
                 renderApp();
             }
         }
 
-        function openRecurringEventModal(id = null) {
-            const modal = document.getElementById('recurringEventModal');
-            modal.classList.remove('hidden');
+        function openRecurringEventModal(reId = null) {
+            document.getElementById('recurringEventForm').reset();
+            document.getElementById('recEventId').value = '';
+            document.getElementById('recEventModalTitle').innerText = reId ? '編輯循環事件' : '新增循環事件';
+            toggleRecEventEndInput('never');
 
-            if (id) {
-                const re = recurringEvents.find(x => x.id === id);
+            if (reId) {
+                const re = recurringEvents.find(x => x.id === reId);
                 if (re) {
-                    document.getElementById('recEventModalTitle').innerText = '編輯循環事件';
                     document.getElementById('recEventId').value = re.id;
                     document.getElementById('recEventTitle').value = re.title;
                     document.getElementById('recEventInterval').value = re.interval || 1;
@@ -2152,23 +2281,22 @@
                     document.getElementById('recEventNextDate').value = re.nextDate;
 
                     const endType = re.endType || 'never';
-                    const radio = document.querySelector(`input[name="recEventEndType"][value="${endType}"]`);
-                    if (radio) radio.checked = true;
+                    const rad = document.querySelector(`input[name="recEventEndType"][value="${endType}"]`);
+                    if (rad) rad.checked = true;
                     toggleRecEventEndInput(endType);
 
-                    document.getElementById('recEventEndDate').value = re.endDate || '';
-                    document.getElementById('recEventEndCount').value = re.endCount || '';
+                    if (re.endDate) document.getElementById('recEventEndDate').value = re.endDate;
+                    if (re.endCount) document.getElementById('recEventEndCount').value = re.endCount;
+
                     document.getElementById('recEventRemindDays').value = re.remindDays !== undefined ? re.remindDays : 3;
                     document.getElementById('recEventVisibility').value = re.visibility || 'private';
                     document.getElementById('recEventNote').value = re.note || '';
                 }
             } else {
-                document.getElementById('recEventModalTitle').innerText = '新增循環事件';
-                document.getElementById('recurringEventForm').reset();
-                document.getElementById('recEventId').value = '';
                 document.getElementById('recEventNextDate').value = getTodayStr();
-                toggleRecEventEndInput('never');
             }
+
+            document.getElementById('recurringEventModal').classList.remove('hidden');
         }
 
         function closeRecurringEventModal() {
@@ -2180,7 +2308,7 @@
             const id = document.getElementById('recEventId').value;
             const endType = document.querySelector('input[name="recEventEndType"]:checked').value;
 
-            const data = {
+            const recEventData = {
                 title: document.getElementById('recEventTitle').value.trim(),
                 interval: Number(document.getElementById('recEventInterval').value) || 1,
                 freqUnit: document.getElementById('recEventFreqUnit').value,
@@ -2188,22 +2316,25 @@
                 endType: endType,
                 endDate: endType === 'date' ? document.getElementById('recEventEndDate').value : '',
                 endCount: endType === 'count' ? Number(document.getElementById('recEventEndCount').value) : null,
-                currentCount: 0,
-                remindDays: Number(document.getElementById('recEventRemindDays').value) || 3,
+                currentCount: id ? (recurringEvents.find(x => x.id === id)?.currentCount || 0) : 0,
+                remindDays: Number(document.getElementById('recEventRemindDays').value),
                 visibility: document.getElementById('recEventVisibility').value,
                 note: document.getElementById('recEventNote').value.trim(),
                 userUid: currentUser ? currentUser.uid : 'demo1'
             };
 
             if (db) {
-                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringEvents', id), data);
-                else await window.fbModules.addDoc(window.fbModules.collection(db, 'recurringEvents'), data);
+                if (id) {
+                    await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringEvents', id), recEventData);
+                } else {
+                    await window.fbModules.addDoc(window.fbModules.collection(db, 'recurringEvents'), recEventData);
+                }
             } else {
                 if (id) {
-                    const idx = recurringEvents.findIndex(x => x.id === id);
-                    if (idx !== -1) recurringEvents[idx] = { id, ...data };
+                    const idx = recurringEvents.findIndex(re => re.id === id);
+                    if (idx !== -1) recurringEvents[idx] = { id, ...recEventData };
                 } else {
-                    recurringEvents.push({ id: 're_' + Date.now(), ...data });
+                    recurringEvents.push({ id: 're_' + Date.now(), ...recEventData });
                 }
                 saveData();
                 renderApp();
@@ -2213,9 +2344,10 @@
 
         async function deleteRecurringEvent(id) {
             if (!confirm('確定要刪除這項循環事件嗎？')) return;
-            if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'recurringEvents', id));
-            else {
-                recurringEvents = recurringEvents.filter(x => x.id !== id);
+            if (db) {
+                await window.fbModules.deleteDoc(window.fbModules.doc(db, 'recurringEvents', id));
+            } else {
+                recurringEvents = recurringEvents.filter(re => re.id !== id);
                 saveData();
                 renderApp();
             }
@@ -2229,23 +2361,25 @@
             const newCount = (re.currentCount || 0) + 1;
 
             if (db) {
-                await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringEvents', re.id), { nextDate, currentCount: newCount });
+                await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringEvents', id), { nextDate, currentCount: newCount });
             } else {
                 re.nextDate = nextDate;
                 re.currentCount = newCount;
                 saveData();
-                renderApp();
             }
+
+            alert('已成功將循環事件推算推移至下一週期！');
+            renderApp();
         }
 
-        function openReminderModal(id = null) {
-            const modal = document.getElementById('reminderModal');
-            modal.classList.remove('hidden');
+        function openReminderModal(rmId = null) {
+            document.getElementById('reminderForm').reset();
+            document.getElementById('reminderId').value = '';
+            document.getElementById('reminderModalTitle').innerText = rmId ? '編輯事件提醒' : '新增事件提醒';
 
-            if (id) {
-                const rm = reminders.find(x => x.id === id);
+            if (rmId) {
+                const rm = reminders.find(x => x.id === rmId);
                 if (rm) {
-                    document.getElementById('reminderModalTitle').innerText = '編輯事件提醒';
                     document.getElementById('reminderId').value = rm.id;
                     document.getElementById('reminderTitle').value = rm.title;
                     document.getElementById('reminderDate').value = rm.date;
@@ -2254,12 +2388,10 @@
                     document.getElementById('reminderNote').value = rm.note || '';
                 }
             } else {
-                document.getElementById('reminderModalTitle').innerText = '新增事件提醒';
-                document.getElementById('reminderForm').reset();
-                document.getElementById('reminderId').value = '';
                 document.getElementById('reminderDate').value = getTodayStr();
-                document.getElementById('reminderVisibility').value = 'private';
             }
+
+            document.getElementById('reminderModal').classList.remove('hidden');
         }
 
         function closeReminderModal() {
@@ -2270,25 +2402,28 @@
             e.preventDefault();
             const id = document.getElementById('reminderId').value;
 
-            const data = {
+            const reminderData = {
                 title: document.getElementById('reminderTitle').value.trim(),
                 date: document.getElementById('reminderDate').value,
                 time: document.getElementById('reminderTime').value,
                 visibility: document.getElementById('reminderVisibility').value,
                 note: document.getElementById('reminderNote').value.trim(),
-                completed: false,
+                completed: id ? (reminders.find(x => x.id === id)?.completed || false) : false,
                 userUid: currentUser ? currentUser.uid : 'demo1'
             };
 
             if (db) {
-                if (id) await window.fbModules.updateDoc(window.fbModules.doc(db, 'reminders', id), data);
-                else await window.fbModules.addDoc(window.fbModules.collection(db, 'reminders'), data);
+                if (id) {
+                    await window.fbModules.updateDoc(window.fbModules.doc(db, 'reminders', id), reminderData);
+                } else {
+                    await window.fbModules.addDoc(window.fbModules.collection(db, 'reminders'), reminderData);
+                }
             } else {
                 if (id) {
-                    const idx = reminders.findIndex(x => x.id === id);
-                    if (idx !== -1) reminders[idx] = { id, completed: reminders[idx].completed, ...data };
+                    const idx = reminders.findIndex(rm => rm.id === id);
+                    if (idx !== -1) reminders[idx] = { id, ...reminderData };
                 } else {
-                    reminders.push({ id: 'rm_' + Date.now(), ...data });
+                    reminders.push({ id: 'rm_' + Date.now(), ...reminderData });
                 }
                 saveData();
                 renderApp();
@@ -2299,6 +2434,7 @@
         async function toggleReminderComplete(id) {
             const rm = reminders.find(x => x.id === id);
             if (!rm) return;
+
             const newStatus = !rm.completed;
 
             if (db) {
@@ -2311,18 +2447,18 @@
         }
 
         async function deleteReminder(id) {
-            if (!confirm('確定要刪除這項提醒嗎？')) return;
-            if (db) await window.fbModules.deleteDoc(window.fbModules.doc(db, 'reminders', id));
-            else {
-                reminders = reminders.filter(x => x.id !== id);
+            if (!confirm('確定要刪除這項事件提醒嗎？')) return;
+            if (db) {
+                await window.fbModules.deleteDoc(window.fbModules.doc(db, 'reminders', id));
+            } else {
+                reminders = reminders.filter(rm => rm.id !== id);
                 saveData();
                 renderApp();
             }
         }
 
         function openSettingsModal() {
-            renderMemberListAdmin();
-            renderCategoryListAdmin();
+            renderSettingsView();
             document.getElementById('settingsModal').classList.remove('hidden');
         }
 
@@ -2330,295 +2466,265 @@
             document.getElementById('settingsModal').classList.add('hidden');
         }
 
-        // ================= 成員順序與編輯/刪除功能 =================
-        function renderMemberListAdmin() {
-            const container = document.getElementById('memberListAdmin');
-            container.innerHTML = members.map((m, index) => `
-                <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-gray-100 text-xs gap-2">
-                    <div class="flex items-center space-x-2 flex-1">
-                        <input type="text" value="${m.avatar}" onchange="updateMemberField('${m.id}', 'avatar', this.value)" class="w-10 text-center border rounded px-1 py-1 text-xs" title="修改圖示">
-                        <div class="flex-1 space-y-1">
-                            <input type="text" value="${m.name}" onchange="updateMemberField('${m.id}', 'name', this.value)" class="w-full font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-primary focus:outline-none" placeholder="成員名稱">
-                            <input type="email" value="${m.email || ''}" onchange="updateMemberField('${m.id}', 'email', this.value)" class="w-full text-[10px] text-gray-400 border-b border-transparent hover:border-gray-300 focus:border-primary focus:outline-none" placeholder="Google Email">
-                        </div>
+        function renderSettingsView() {
+            // 成員清單
+            const memberContainer = document.getElementById('memberListAdmin');
+            memberContainer.innerHTML = members.map(m => `
+                <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-gray-100 text-xs shadow-2xs">
+                    <div class="flex items-center space-x-2 truncate">
+                        <span class="text-base">${m.avatar}</span>
+                        <span class="font-bold text-gray-800">${m.name}</span>
+                        <span class="text-gray-400 font-mono truncate text-[11px]">${m.email || '無授權 Email'}</span>
                     </div>
-                    <div class="flex items-center space-x-1 shrink-0">
-                        <button onclick="moveMember(${index}, -1)" ${index === 0 ? 'disabled class="text-gray-200 cursor-not-allowed p-1"' : 'class="text-gray-400 hover:text-indigo-600 p-1"'}><i class="fa-solid fa-arrow-up"></i></button>
-                        <button onclick="moveMember(${index}, 1)" ${index === members.length - 1 ? 'disabled class="text-gray-200 cursor-not-allowed p-1"' : 'class="text-gray-400 hover:text-indigo-600 p-1"'}><i class="fa-solid fa-arrow-down"></i></button>
-                        <button onclick="deleteMember('${m.id}')" class="text-gray-300 hover:text-red-500 p-1 ml-1"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="deleteMember('${m.id}')" class="text-gray-300 hover:text-red-500 p-1 transition"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('');
+
+            // 分類與次分類清單
+            const catContainer = document.getElementById('categoryListAdmin');
+            catContainer.innerHTML = categories.map(c => `
+                <div class="bg-white p-3 rounded-xl border border-gray-100 space-y-2 text-xs shadow-2xs">
+                    <div class="flex justify-between items-center font-bold">
+                        <div class="flex items-center space-x-1.5">
+                            <span>${c.icon}</span>
+                            <span class="text-gray-800">${c.name}</span>
+                            <span class="text-[10px] ${c.type === 'expense' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'} px-1.5 py-0.5 rounded">${c.type === 'expense' ? '支出' : '收入'}</span>
+                        </div>
+                        <button onclick="deleteCategory('${c.id}')" class="text-gray-300 hover:text-red-500 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+
+                    <!-- 次分類清單 -->
+                    <div class="flex flex-wrap gap-1.5 items-center pt-1 border-t border-gray-50">
+                        ${(c.subcategories || []).map(sub => `
+                            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg text-[11px] flex items-center gap-1">
+                                ${sub}
+                                <button onclick="deleteSubcategory('${c.id}', '${sub}')" class="text-gray-400 hover:text-red-500 text-[10px]"><i class="fa-solid fa-xmark"></i></button>
+                            </span>
+                        `).join('')}
+                        <button onclick="promptAddSubcategory('${c.id}')" class="text-[10px] text-indigo-600 bg-indigo-50 hover:bg-indigo-100 font-bold px-2 py-0.5 rounded-lg transition">+ 新增次分類</button>
                     </div>
                 </div>
             `).join('');
         }
 
-        function updateMemberField(id, field, value) {
-            if (!confirm('確定要修改此成員的設定嗎？')) {
-                renderMemberListAdmin();
-                return;
-            }
-            const m = members.find(x => x.id === id);
-            if (m) {
-                m[field] = value.trim();
-                saveData();
-                initFormSelects();
-                renderMemberListAdmin();
-            }
-        }
-
-        function moveMember(index, direction) {
-            const targetIndex = index + direction;
-            if (targetIndex < 0 || targetIndex >= members.length) return;
-            if (!confirm('確定要調整成員的顯示順序嗎？')) return;
-            
-            const temp = members[index];
-            members[index] = members[targetIndex];
-            members[targetIndex] = temp;
-            
-            saveData();
-            renderMemberListAdmin();
-            initFormSelects();
-        }
-
-        function addMember(e) {
+        async function addMember(e) {
             e.preventDefault();
             const name = document.getElementById('newMemberName').value.trim();
             const avatar = document.getElementById('newMemberAvatar').value.trim() || '👤';
-            const email = document.getElementById('newMemberEmail').value.trim();
+            const email = document.getElementById('newMemberEmail').value.trim().toLowerCase();
 
-            if (!name) return;
-            if (!confirm(`確定要新增成員「${name}」嗎？`)) return;
+            const newMember = {
+                id: 'm_' + Date.now(),
+                name,
+                avatar,
+                email
+            };
 
-            members.push({ id: 'm_' + Date.now(), name, avatar, email });
-            saveData();
-            renderMemberListAdmin();
-            initFormSelects();
+            if (db) {
+                await window.fbModules.setDoc(window.fbModules.doc(db, 'familyMembers', newMember.id), newMember);
+            } else {
+                members.push(newMember);
+                saveDataLocallyOnly();
+            }
+
             document.getElementById('newMemberName').value = '';
             document.getElementById('newMemberEmail').value = '';
-        }
-
-        function deleteMember(id) {
-            if (members.length <= 1) { alert('至少需要保留一名家庭成員'); return; }
-            if (!confirm('確定要刪除此成員嗎？此操作無法復原。')) return;
-            members = members.filter(m => m.id !== id);
-            saveData();
-            renderMemberListAdmin();
             initFormSelects();
+            renderSettingsView();
         }
 
-        // ================= 分類與次分類順序與編輯/刪除功能 =================
-        function renderCategoryListAdmin() {
-            const container = document.getElementById('categoryListAdmin');
-            container.innerHTML = categories.map((c, cIdx) => {
-                const subList = c.subcategories || [];
-                const subBadges = subList.map((sub, sIdx) => `
-                    <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-[11px]">
-                        <input type="text" value="${sub}" onchange="updateSubcategoryName('${c.id}', ${sIdx}, this.value)" class="bg-transparent border-b border-transparent hover:border-gray-400 focus:border-primary focus:outline-none w-20">
-                        <button onclick="deleteSubcategory('${c.id}', ${sIdx})" class="text-gray-400 hover:text-red-500 text-[10px] ml-1"><i class="fa-solid fa-xmark"></i></button>
-                    </span>
-                `).join(' ');
+        async function deleteMember(id) {
+            if (members.length <= 1) { alert('至少需保留一名家庭成員！'); return; }
+            if (!confirm('確定要刪除此家庭成員嗎？')) return;
 
-                return `
-                    <div class="bg-white p-3 rounded-xl border border-gray-100 space-y-2">
-                        <div class="flex items-center justify-between text-xs gap-2">
-                            <div class="flex items-center space-x-2 flex-1">
-                                <input type="text" value="${c.icon}" onchange="updateCategoryField('${c.id}', 'icon', this.value)" class="w-10 text-center border rounded px-1 py-1 text-xs" title="修改圖示">
-                                <input type="text" value="${c.name}" onchange="updateCategoryField('${c.id}', 'name', this.value)" class="flex-1 font-bold text-gray-800 border-b border-transparent hover:border-gray-300 focus:border-primary focus:outline-none" placeholder="分類名稱">
-                                <span class="text-[10px] ${c.type === 'expense' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'} px-1.5 py-0.5 rounded font-bold shrink-0">
-                                    ${c.type === 'expense' ? '支出' : '收入'}
-                                </span>
-                            </div>
-                            <div class="flex items-center space-x-1 shrink-0">
-                                <button onclick="moveCategory(${cIdx}, -1)" ${cIdx === 0 ? 'disabled class="text-gray-200 cursor-not-allowed p-1"' : 'class="text-gray-400 hover:text-indigo-600 p-1"'}><i class="fa-solid fa-arrow-up"></i></button>
-                                <button onclick="moveCategory(${cIdx}, 1)" ${cIdx === categories.length - 1 ? 'disabled class="text-gray-200 cursor-not-allowed p-1"' : 'class="text-gray-400 hover:text-indigo-600 p-1"'}><i class="fa-solid fa-arrow-down"></i></button>
-                                <button onclick="deleteCategory('${c.id}')" class="text-gray-300 hover:text-red-500 p-1 ml-1"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <div class="space-y-1.5 pl-1 pt-1 border-t border-gray-50">
-                            <div class="flex flex-wrap gap-1">
-                                ${subBadges.length > 0 ? subBadges : '<span class="text-[10px] text-gray-400 italic">無次分類</span>'}
-                            </div>
-                            <div class="flex gap-1.5 pt-1">
-                                <input type="text" id="newSubCat_${c.id}" placeholder="新增次分類 (如：水費)" class="flex-1 border rounded-lg px-2 py-1 text-[11px]">
-                                <button onclick="addSubcategory('${c.id}')" class="bg-indigo-50 border border-indigo-200 text-indigo-700 px-2.5 py-1 rounded-lg text-[11px] font-bold hover:bg-indigo-100 transition">+ 新增</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateCategoryField(id, field, value) {
-            if (!confirm('確定要修改此主分類的設定嗎？')) {
-                renderCategoryListAdmin();
-                return;
+            if (db) {
+                await window.fbModules.deleteDoc(window.fbModules.doc(db, 'familyMembers', id));
+            } else {
+                members = members.filter(m => m.id !== id);
+                saveDataLocallyOnly();
             }
-            const c = categories.find(x => x.id === id);
-            if (c) {
-                c[field] = value.trim();
-                saveData();
-                initFormSelects();
-                renderCategoryListAdmin();
-            }
-        }
 
-        function moveCategory(index, direction) {
-            const targetIndex = index + direction;
-            if (targetIndex < 0 || targetIndex >= categories.length) return;
-            if (!confirm('確定要調整主分類的顯示順序嗎？')) return;
-
-            const temp = categories[index];
-            categories[index] = categories[targetIndex];
-            categories[targetIndex] = temp;
-
-            saveData();
-            renderCategoryListAdmin();
             initFormSelects();
+            renderSettingsView();
         }
 
-        function addCategory(e) {
+        async function addCategory(e) {
             e.preventDefault();
             const name = document.getElementById('newCategoryName').value.trim();
             const icon = document.getElementById('newCategoryIcon').value.trim() || '📌';
             const type = document.getElementById('newCategoryType').value;
 
-            if (!name) return;
-            if (!confirm(`確定要新增主分類「${name}」嗎？`)) return;
+            const newCat = {
+                id: 'c_' + Date.now(),
+                name,
+                icon,
+                type,
+                subcategories: []
+            };
 
-            categories.push({ id: 'c_' + Date.now(), name, icon, type, subcategories: [] });
-            saveData();
-            renderCategoryListAdmin();
-            initFormSelects();
-            document.getElementById('newCategoryName').value = '';
-        }
-
-        function deleteCategory(id) {
-            if (categories.length <= 1) { alert('至少需要保留一個分類'); return; }
-            if (!confirm('確定要刪除此主分類嗎？')) return;
-            categories = categories.filter(c => c.id !== id);
-            saveData();
-            renderCategoryListAdmin();
-            initFormSelects();
-        }
-
-        function addSubcategory(catId) {
-            const input = document.getElementById(`newSubCat_${catId}`);
-            if (!input) return;
-            const subName = input.value.trim();
-            if (!subName) return;
-
-            if (!confirm(`確定要新增次分類「${subName}」嗎？`)) return;
-
-            const cat = categories.find(c => c.id === catId);
-            if (cat) {
-                if (!cat.subcategories) cat.subcategories = [];
-                if (cat.subcategories.includes(subName)) {
-                    alert('次分類已存在');
-                    return;
-                }
-                cat.subcategories.push(subName);
-                saveData();
-                renderCategoryListAdmin();
-                initFormSelects();
+            if (db) {
+                await window.fbModules.setDoc(window.fbModules.doc(db, 'categories', newCat.id), newCat);
+            } else {
+                categories.push(newCat);
+                saveDataLocallyOnly();
             }
+
+            document.getElementById('newCategoryName').value = '';
+            initFormSelects();
+            renderSettingsView();
         }
 
-        function updateSubcategoryName(catId, subIdx, newValue) {
-            const subName = newValue.trim();
-            if (!subName) return;
-            if (!confirm('確定要修改此次分類名稱嗎？')) {
-                renderCategoryListAdmin();
+        async function deleteCategory(id) {
+            if (!confirm('確定要刪除此主分類嗎？')) return;
+
+            if (db) {
+                await window.fbModules.deleteDoc(window.fbModules.doc(db, 'categories', id));
+            } else {
+                categories = categories.filter(c => c.id !== id);
+                saveDataLocallyOnly();
+            }
+
+            initFormSelects();
+            renderSettingsView();
+        }
+
+        async function promptAddSubcategory(catId) {
+            const cat = categories.find(c => c.id === catId);
+            if (!cat) return;
+
+            const subName = prompt(`新增 「${cat.name}」 的次分類名稱：`);
+            if (!subName || !subName.trim()) return;
+
+            const cleanSub = subName.trim();
+            if (!cat.subcategories) cat.subcategories = [];
+            if (cat.subcategories.includes(cleanSub)) {
+                alert('該次分類已經存在！');
                 return;
             }
 
-            const cat = categories.find(c => c.id === catId);
-            if (cat && cat.subcategories) {
-                cat.subcategories[subIdx] = subName;
-                saveData();
-                renderCategoryListAdmin();
-                initFormSelects();
+            cat.subcategories.push(cleanSub);
+
+            if (db) {
+                await window.fbModules.updateDoc(window.fbModules.doc(db, 'categories', catId), {
+                    subcategories: cat.subcategories
+                });
+            } else {
+                saveDataLocallyOnly();
             }
+
+            initFormSelects();
+            renderSettingsView();
         }
 
-        function deleteSubcategory(catId, subIdx) {
-            if (!confirm('確定要刪除此次分類嗎？')) return;
+        async function deleteSubcategory(catId, subName) {
             const cat = categories.find(c => c.id === catId);
-            if (cat && cat.subcategories) {
-                cat.subcategories.splice(subIdx, 1);
-                saveData();
-                renderCategoryListAdmin();
-                initFormSelects();
+            if (!cat || !cat.subcategories) return;
+
+            cat.subcategories = cat.subcategories.filter(s => s !== subName);
+
+            if (db) {
+                await window.fbModules.updateDoc(window.fbModules.doc(db, 'categories', catId), {
+                    subcategories: cat.subcategories
+                });
+            } else {
+                saveDataLocallyOnly();
             }
+
+            initFormSelects();
+            renderSettingsView();
         }
 
+        // 匯出 CSV 與 JSON 備份
         function exportTransactionsCSV() {
-            let csv = '\uFEFF';
-            csv += '日期,類型,金額,主分類,次分類,付款人,權限,性質,備註\n';
+            let csv = '\uFEFF'; // UTF-8 BOM
+            csv += '日期,類型,金額,主分類,次分類,付款人,瀏覽權限,性質備註,說明,建立者UID\n';
+
             transactions.forEach(t => {
-                const cat = categories.find(c => c.id === t.category_id) || { name: '未知' };
-                const payer = members.find(m => m.id === t.payer_id) || { name: '不設定' };
-                csv += `"${t.date}","${t.type === 'expense' ? '支出' : '收入'}",${t.amount},"${cat.name}","${t.subcategory || '不分類'}","${payer.name}","${t.visibility === 'public' ? '全家公開' : '個人私密'}","${t.tag === 'reimburse' ? '報帳' : '一般'}","${(t.note || '').replace(/"/g, '""')}"\n`;
+                const cat = categories.find(c => c.id === t.category_id) || { name: '其他' };
+                const payer = members.find(m => m.id === t.payer_id) || { name: '無' };
+                const typeStr = t.type === 'expense' ? '支出' : '收入';
+                const tagStr = t.tag === 'reimburse' ? '報帳' : '一般';
+                const visStr = t.visibility === 'private' ? '私密' : '公開';
+
+                csv += `"${t.date}","${typeStr}",${t.amount},"${cat.name}","${t.subcategory || ''}","${payer.name}","${visStr}","${tagStr}","${(t.note || '').replace(/"/g, '""')}","${t.userUid || ''}"\n`;
             });
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `家庭記帳明細_${getTodayStr()}.csv`;
-            link.click();
+            downloadBlob(csv, `家庭記帳匯出_${getTodayStr()}.csv`, 'text/csv;charset=utf-8;');
         }
 
         function exportDiariesCSV() {
-            let csv = '\uFEFF';
-            csv += '日期,標題,心情,天氣,權限,內文\n';
+            let csv = '\uFEFF'; // UTF-8 BOM
+            csv += '日期,標題,心情,天氣,作者,瀏覽權限,內容,建立者UID\n';
+
             diaries.forEach(d => {
-                csv += `"${d.date}","${(d.title || '').replace(/"/g, '""')}","${d.mood || ''}","${d.weather || ''}","${d.visibility === 'public' ? '全家公開' : '個人私密'}","${(d.content || '').replace(/"/g, '""')}"\n`;
+                const author = members.find(m => m.id === d.author_id) || { name: '成員' };
+                const visStr = d.visibility === 'private' ? '私密' : '公開';
+
+                csv += `"${d.date}","${(d.title || '').replace(/"/g, '""')}","${d.mood || ''}","${d.weather || ''}","${author.name}","${visStr}","${(d.content || '').replace(/"/g, '""')}","${d.userUid || ''}"\n`;
             });
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `家庭日記紀錄_${getTodayStr()}.csv`;
-            link.click();
+            downloadBlob(csv, `家庭日記匯出_${getTodayStr()}.csv`, 'text/csv;charset=utf-8;');
         }
 
         function exportFullBackupJSON() {
-            const backupObj = {
-                members, categories, transactions, diaries, recurringTransactions, recurringEvents, reminders,
-                exportDate: new Date().toISOString()
+            const data = {
+                members,
+                categories,
+                transactions,
+                diaries,
+                recurringTransactions,
+                recurringEvents,
+                reminders,
+                version: '1.4',
+                exportAt: new Date().toISOString()
             };
-            const jsonStr = JSON.stringify(backupObj, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `家庭帳本完整備份_${getTodayStr()}.json`;
-            link.click();
+
+            downloadBlob(JSON.stringify(data, null, 2), `家庭記帳日記備份_${getTodayStr()}.json`, 'application/json');
         }
 
-        function importFullBackupJSON(e) {
-            const file = e.target.files[0];
+        function importFullBackupJSON(event) {
+            const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = async function(e) {
                 try {
-                    const data = JSON.parse(evt.target.result);
-                    if (data.members) members = data.members;
-                    if (data.categories) categories = data.categories;
-                    if (data.transactions) transactions = data.transactions;
-                    if (data.diaries) diaries = data.diaries;
-                    if (data.recurringTransactions) recurringTransactions = data.recurringTransactions;
-                    if (data.recurringEvents) recurringEvents = data.recurringEvents;
-                    if (data.reminders) reminders = data.reminders;
+                    const data = JSON.parse(e.target.result);
+                    if (confirm('還原 JSON 備份將會覆蓋目前本機資料庫，確定要繼續嗎？')) {
+                        if (data.members) members = data.members;
+                        if (data.categories) categories = data.categories;
+                        if (data.transactions) transactions = data.transactions;
+                        if (data.diaries) diaries = data.diaries;
+                        if (data.recurringTransactions) recurringTransactions = data.recurringTransactions;
+                        if (data.recurringEvents) recurringEvents = data.recurringEvents;
+                        if (data.reminders) reminders = data.reminders;
 
-                    saveData();
-                    initFormSelects();
-                    renderApp();
-                    alert('資料成功還原與更新！');
-                    closeSettingsModal();
+                        if (db) {
+                            // 同步還原資料至 Firestore
+                            for (let m of members) await window.fbModules.setDoc(window.fbModules.doc(db, 'familyMembers', m.id), m);
+                            for (let c of categories) await window.fbModules.setDoc(window.fbModules.doc(db, 'categories', c.id), c);
+                        }
+
+                        saveData();
+                        initFormSelects();
+                        renderApp();
+                        alert('備份資料已成功還原！');
+                    }
                 } catch (err) {
-                    alert('備份檔案讀取失敗，請確認檔案格式是否正確。');
+                    alert('讀取 JSON 備份檔失敗，格式不正確。');
                 }
             };
             reader.readAsText(file);
+        }
+
+        function downloadBlob(content, filename, contentType) {
+            const blob = new Blob([content], { type: contentType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
         }
     </script>
 </body>
