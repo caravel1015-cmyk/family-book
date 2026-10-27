@@ -1051,7 +1051,7 @@
                     });
                 } catch (e) { console.error(e); }
             } else {
-                currentUser = { uid: 'demo1', name: '爸爸 (Demo)', avatar: '👨' };
+                currentUser = { uid: 'demo1', name: '爸爸', avatar: '👨', memberId: 'm1' };
                 updateAuthUI();
             }
         }
@@ -1239,7 +1239,7 @@
                 if (m) return m.id;
             }
             if (currentUser && currentUser.name) {
-                const m = members.find(x => x.name === currentUser.name);
+                const m = members.find(x => x.name && currentUser.name.includes(x.name));
                 if (m) return m.id;
             }
             return members[0] ? members[0].id : '';
@@ -1578,7 +1578,7 @@
                                 </div>
                             </div>
                             <div class="flex justify-end items-center space-x-2 pt-2 border-t border-gray-50">
-                                ${isDue && !isExpired ? `<button onclick="executeSingleRecurringTx('${rt.id}')" class="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-lg font-bold hover:bg-indigo-100 transition"><i class="fa-solid fa-play text-[10px] mr-1"></i>知識執行記帳</button>` : ''}
+                                ${isDue && !isExpired ? `<button onclick="executeSingleRecurringTx('${rt.id}')" class="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-lg font-bold hover:bg-indigo-100 transition"><i class="fa-solid fa-play text-[10px] mr-1"></i>立即執行記帳</button>` : ''}
                                 ${isOwner ? `
                                     <button onclick="openRecurringTxModal('${rt.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
                                     <button onclick="deleteRecurringTx('${rt.id}')" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
@@ -1821,30 +1821,28 @@
         }
 
         function renderStatsView() {
-            // 1. 根據權限取得基礎記帳集合
-            let baseTxs = transactions;
-            if (currentStatsScope === 'public') {
-                baseTxs = baseTxs.filter(t => t.visibility === 'public');
-            } else {
-                baseTxs = baseTxs.filter(t => currentUser && t.userUid === currentUser.uid);
-            }
-
-            // 2. 頂部區間專用：依據 statsStartDate / statsEndDate 進行過濾
             const startStr = document.getElementById('statsStartDate').value;
             const endStr = document.getElementById('statsEndDate').value;
-            let dateFilteredTxs = baseTxs;
-            if (startStr) dateFilteredTxs = dateFilteredTxs.filter(t => t.date >= startStr);
-            if (endStr) dateFilteredTxs = dateFilteredTxs.filter(t => t.date <= endStr);
 
-            const totalExp = dateFilteredTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
-            const totalInc = dateFilteredTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+            let statsTxs = transactions;
+            if (currentStatsScope === 'public') {
+                statsTxs = statsTxs.filter(t => t.visibility === 'public');
+            } else {
+                statsTxs = statsTxs.filter(t => currentUser && t.userUid === currentUser.uid);
+            }
+
+            if (startStr) statsTxs = statsTxs.filter(t => t.date >= startStr);
+            if (endStr) statsTxs = statsTxs.filter(t => t.date <= endStr);
+
+            const totalExp = statsTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0);
+            const totalInc = statsTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
 
             document.getElementById('statsTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
             document.getElementById('statsTotalIncome').innerText = `$${totalInc.toLocaleString()}`;
 
-            // 3. 分類佔比（使用頂部日期區間過濾後的數據）
+            // 1. 分類佔比
             const catContainer = document.getElementById('categoryStatsContainer');
-            const expTxs = dateFilteredTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse');
+            const expTxs = statsTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse');
 
             const catMap = {};
             expTxs.forEach(t => {
@@ -1875,8 +1873,8 @@
                 }).join('');
             }
 
-            // 4. 趨勢圖邏輯（使用 baseTxs 完整權限資料，不受頂部日期區間干擾）
-            renderTrendCharts(baseTxs);
+            // 2. 趨勢圖邏輯 (折線圖 & 長條圖)
+            renderTrendCharts(statsTxs);
         }
 
         function renderTrendCharts(scopeTxs) {
@@ -1887,17 +1885,14 @@
                 const startYM = document.getElementById('trendStartMonth').value || '2026-01';
                 const endYM = document.getElementById('trendEndMonth').value || '2026-12';
 
-                let [sy, sm] = startYM.split('-').map(Number);
-                let [ey, em] = endYM.split('-').map(Number);
+                let cur = new Date(startYM + '-01');
+                const end = new Date(endYM + '-01');
 
-                let curY = sy, curM = sm;
-                while (curY < ey || (curY === ey && curM <= em)) {
-                    periods.push(`${curY}-${String(curM).padStart(2, '0')}`);
-                    curM++;
-                    if (curM > 12) {
-                        curM = 1;
-                        curY++;
-                    }
+                while (cur <= end) {
+                    const y = cur.getFullYear();
+                    const m = String(cur.getMonth() + 1).padStart(2, '0');
+                    periods.push(`${y}-${m}`);
+                    cur.setMonth(cur.getMonth() + 1);
                 }
             } else {
                 const startY = Number(document.getElementById('trendStartYear').value || 2023);
@@ -2714,8 +2709,6 @@
         async function deleteSubcategory(catId, subName) {
             const cat = categories.find(c => c.id === catId);
             if (!cat || !cat.subcategories) return;
-
-            if (!confirm(`確定要刪除「${subName}」這個次分類嗎？`)) return;
 
             cat.subcategories = cat.subcategories.filter(s => s !== subName);
 
