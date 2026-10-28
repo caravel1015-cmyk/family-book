@@ -2960,6 +2960,7 @@
         }
 
         async function deleteSubcategory(catId, subName) {
+            if (!confirm(`確定要刪除次分類「${subName}」嗎？`)) return;
             const cat = categories.find(c => c.id === catId);
             if (!cat || !cat.subcategories) return;
 
