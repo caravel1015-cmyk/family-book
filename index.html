@@ -2675,7 +2675,7 @@
 
         function renderSettingsView() {
             const memberContainer = document.getElementById('memberListAdmin');
-            memberContainer.innerHTML = members.map(m => `
+            memberContainer.innerHTML = members.map((m, index) => `
                 <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-gray-100 text-xs shadow-2xs">
                     <div class="flex items-center space-x-2 truncate">
                         <span class="text-base">${m.avatar}</span>
@@ -2683,6 +2683,8 @@
                         <span class="text-gray-400 font-mono truncate text-[11px]">${m.email || '無授權 Email'}</span>
                     </div>
                     <div class="flex items-center space-x-1 shrink-0">
+                        <button onclick="moveMember('${m.id}', -1)" ${index === 0 ? 'disabled class="opacity-30 cursor-not-allowed text-gray-400 p-1 text-xs"' : 'class="text-gray-400 hover:text-primary p-1 text-xs"'} title="上移"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button onclick="moveMember('${m.id}', 1)" ${index === members.length - 1 ? 'disabled class="opacity-30 cursor-not-allowed text-gray-400 p-1 text-xs"' : 'class="text-gray-400 hover:text-primary p-1 text-xs"'} title="下移"><i class="fa-solid fa-arrow-down"></i></button>
                         <button onclick="editMember('${m.id}')" class="text-gray-400 hover:text-indigo-600 p-1 text-xs" title="修改成員"><i class="fa-solid fa-pen"></i></button>
                         <button onclick="deleteMember('${m.id}')" class="text-gray-300 hover:text-red-500 p-1 text-xs" title="刪除成員"><i class="fa-solid fa-trash"></i></button>
                     </div>
@@ -2788,6 +2790,39 @@
             renderSettingsView();
         }
 
+        async function moveMember(id, direction) {
+            const index = members.findIndex(m => m.id === id);
+            if (index === -1) return;
+            
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= members.length) return;
+
+            const temp = members[index];
+            members[index] = members[newIndex];
+            members[newIndex] = temp;
+
+            saveDataLocallyOnly();
+
+            if (db) {
+                try {
+                    const updatePromises = members.map((mem, idx) => {
+                        const memRef = window.fbModules.doc(db, 'familyMembers', mem.id);
+                        return window.fbModules.setDoc(memRef, {
+                            ...mem,
+                            order: idx
+                        }, { merge: true });
+                    });
+                    await Promise.all(updatePromises);
+                } catch (error) {
+                    console.error("同步成員順序至雲端失敗：", error);
+                }
+            }
+
+            initFormSelects();
+            renderSettingsView();
+            renderApp();
+        }
+
         async function addCategory(e) {
             e.preventDefault();
             const name = document.getElementById('newCategoryName').value.trim();
@@ -2857,8 +2892,17 @@
             saveDataLocallyOnly();
 
             if (db) {
-                for (let c of categories) {
-                    await window.fbModules.setDoc(window.fbModules.doc(db, 'categories', c.id), c);
+                try {
+                    const updatePromises = categories.map((cat, idx) => {
+                        const catRef = window.fbModules.doc(db, 'categories', cat.id);
+                        return window.fbModules.setDoc(catRef, {
+                            ...cat,
+                            order: idx
+                        }, { merge: true });
+                    });
+                    await Promise.all(updatePromises);
+                } catch (error) {
+                    console.error("同步分類順序至雲端失敗：", error);
                 }
             }
 
