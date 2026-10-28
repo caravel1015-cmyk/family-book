@@ -1150,6 +1150,7 @@
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'familyMembers'), (snap) => {
                 if (!snap.empty) {
                     members = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    members.sort((a, b) => (a.order || 0) - (b.order || 0)); // 👉 依照 order 排序
                     saveDataLocallyOnly();
                     initFormSelects();
                     renderSettingsView();
@@ -1168,6 +1169,7 @@
                             subcategories: Array.isArray(data.subcategories) ? data.subcategories : []
                         };
                     });
+                    categories.sort((a, b) => (a.order || 0) - (b.order || 0)); // 👉 依照 order 排序
                     saveDataLocallyOnly();
                     initFormSelects();
                     renderSettingsView();
@@ -2731,7 +2733,8 @@
                 id: 'm_' + Date.now(),
                 name,
                 avatar,
-                email
+                email,
+                order: members.length // 👉 賦予新的 order
             };
 
             if (db) {
@@ -2806,6 +2809,7 @@
             if (db) {
                 try {
                     const updatePromises = members.map((mem, idx) => {
+                        mem.order = idx; // 👉 調整本機陣列中的 order
                         const memRef = window.fbModules.doc(db, 'familyMembers', mem.id);
                         return window.fbModules.setDoc(memRef, {
                             ...mem,
@@ -2834,7 +2838,8 @@
                 name,
                 icon,
                 type,
-                subcategories: []
+                subcategories: [],
+                order: categories.length // 👉 賦予新的 order
             };
 
             if (db) {
@@ -2894,6 +2899,7 @@
             if (db) {
                 try {
                     const updatePromises = categories.map((cat, idx) => {
+                        cat.order = idx; // 👉 調整本機陣列中的 order
                         const catRef = window.fbModules.doc(db, 'categories', cat.id);
                         return window.fbModules.setDoc(catRef, {
                             ...cat,
