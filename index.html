@@ -382,6 +382,34 @@
 
     </main>
 
+    <!-- Modal：分類記帳明細彈窗 -->
+    <div id="categoryDetailModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                <div>
+                    <h3 id="categoryDetailModalTitle" class="text-base font-bold text-gray-900 flex items-center gap-1.5"></h3>
+                    <p id="categoryDetailModalSubtitle" class="text-xs text-gray-500 mt-0.5"></p>
+                </div>
+                <button onclick="closeCategoryDetailModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="categoryDetailList" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- Modal：長條圖特定期別分類明細彈窗 -->
+    <div id="barChartDetailModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[85vh] overflow-y-auto space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-100 pb-3">
+                <div>
+                    <h3 id="barChartDetailModalTitle" class="text-base font-bold text-gray-900 flex items-center gap-1.5"></h3>
+                    <p id="barChartDetailModalSubtitle" class="text-xs text-gray-500 mt-0.5"></p>
+                </div>
+                <button onclick="closeBarChartDetailModal()" class="text-gray-400 hover:text-gray-600 p-1"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div id="barChartDetailList" class="space-y-2"></div>
+        </div>
+    </div>
+
     <!-- Modal：記帳表單 -->
     <div id="transactionModal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
@@ -932,7 +960,7 @@
         // 檢查並關閉任意開啟中的 Modal，若有關閉則回傳 true
         function closeAnyOpenModal() {
             let closedAny = false;
-            const modals = ['transactionModal', 'diaryModal', 'recurringTxModal', 'recurringEventModal', 'reminderModal', 'settingsModal'];
+            const modals = ['categoryDetailModal', 'barChartDetailModal', 'transactionModal', 'diaryModal', 'recurringTxModal', 'recurringEventModal', 'reminderModal', 'settingsModal'];
             modals.forEach(modalId => {
                 const el = document.getElementById(modalId);
                 if (el && !el.classList.contains('hidden')) {
@@ -1878,9 +1906,9 @@
                 catContainer.innerHTML = sortedCats.map(c => {
                     const pct = totalExp > 0 ? Math.round((c.total / totalExp) * 100) : 0;
                     return `
-                        <div class="space-y-1">
+                        <div onclick="openCategoryDetailModal('${c.id}')" class="space-y-1 p-2 rounded-xl hover:bg-gray-50 cursor-pointer transition group">
                             <div class="flex justify-between items-center text-xs">
-                                <span class="font-bold text-gray-700">${c.icon} ${c.name}</span>
+                                <span class="font-bold text-gray-700 group-hover:text-primary transition">${c.icon} ${c.name} <i class="fa-solid fa-angle-right text-[10px] text-gray-400 ml-1 group-hover:translate-x-0.5 transition-transform"></i></span>
                                 <span class="font-extrabold text-gray-900">$${c.total.toLocaleString()} (${pct}%)</span>
                             </div>
                             <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
@@ -1892,6 +1920,77 @@
             }
 
             renderTrendCharts(statsTxs);
+        }
+
+        // 點擊支出分類佔比後開啟的明細彈窗邏輯
+        function openCategoryDetailModal(catId) {
+            const startStr = document.getElementById('statsStartDate').value;
+            const endStr = document.getElementById('statsEndDate').value;
+
+            let filteredTxs = transactions;
+
+            // 根據目前的統計範圍進行篩選
+            if (currentStatsScope === 'public') {
+                filteredTxs = filteredTxs.filter(t => t.visibility === 'public');
+            } else if (currentStatsScope === 'payer') {
+                const loggedInMemberId = currentUser ? currentUser.memberId : null;
+                filteredTxs = filteredTxs.filter(t => loggedInMemberId && t.payer_id === loggedInMemberId);
+            } else if (currentStatsScope === 'personal') {
+                filteredTxs = filteredTxs.filter(t => currentUser && t.userUid === currentUser.uid && t.visibility === 'private');
+            } else {
+                filteredTxs = filteredTxs.filter(t => canViewItem(t));
+            }
+
+            if (startStr) filteredTxs = filteredTxs.filter(t => t.date >= startStr);
+            if (endStr) filteredTxs = filteredTxs.filter(t => t.date <= endStr);
+
+            // 篩選出該主分類的支出 (排除報帳)
+            const catTxs = filteredTxs.filter(t => t.category_id === catId && t.type === 'expense' && t.tag !== 'reimburse')
+                                      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const catObj = categories.find(c => c.id === catId) || { name: '其他', icon: '📌' };
+            const totalSum = catTxs.reduce((s, t) => s + Number(t.amount), 0);
+
+            document.getElementById('categoryDetailModalTitle').innerHTML = `${catObj.icon} ${catObj.name} 明細紀錄`;
+            document.getElementById('categoryDetailModalSubtitle').innerText = `區間：${startStr || '未限'} ~ ${endStr || '未限'} · 共 ${catTxs.length} 筆 · 合計 $${totalSum.toLocaleString()}`;
+
+            const listContainer = document.getElementById('categoryDetailList');
+
+            if (catTxs.length === 0) {
+                listContainer.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs">此分類在該區間內無明細紀錄</div>`;
+            } else {
+                listContainer.innerHTML = catTxs.map(t => {
+                    const payer = members.find(m => m.id === t.payer_id) || { name: '不設定', avatar: '📌' };
+                    const isOwner = currentUser && t.userUid === currentUser.uid;
+                    const isPrivate = t.visibility === 'private';
+
+                    return `
+                        <div class="flex justify-between items-center p-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl transition text-xs">
+                            <div class="truncate pr-2">
+                                <div class="flex items-center space-x-1.5 font-bold text-gray-800">
+                                    <span>${t.date}</span>
+                                    ${t.subcategory ? `<span class="text-[10px] bg-white border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-normal">${t.subcategory}</span>` : ''}
+                                    ${isPrivate ? '<span class="text-[10px] bg-gray-200 text-gray-600 px-1 rounded">🔒</span>' : ''}
+                                </div>
+                                <p class="text-[11px] text-gray-500 mt-1 truncate">${t.payer_id ? payer.avatar + ' ' + payer.name : '👤 不設定'} ${t.note ? '· ' + t.note : ''}</p>
+                            </div>
+                            <div class="flex items-center space-x-2 shrink-0">
+                                <span class="font-extrabold text-sm text-red-500">-$${Number(t.amount).toLocaleString()}</span>
+                                ${isOwner ? `
+                                    <button onclick="closeCategoryDetailModal(); openTransactionModal('${t.id}');" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteTransaction('${t.id}'); openCategoryDetailModal('${catId}');" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('categoryDetailModal').classList.remove('hidden');
+        }
+
+        function closeCategoryDetailModal() {
+            document.getElementById('categoryDetailModal').classList.add('hidden');
         }
 
         function renderTrendCharts(scopeTxs) {
@@ -1924,7 +2023,7 @@
 
             document.getElementById('trendRangeLabel').innerText = `${periods[0]} ~ ${periods[periods.length - 1]}`;
 
-            // --- 修正處：若該月份無資料，回傳 null 而非 0，避免圖表在空白月份硬連線或畫出紅綠線 ---
+            // 若該月份無資料，回傳 null 而非 0，避免圖表在空白月份硬連線或畫出紅綠線
             const expenseData = periods.map(p => {
                 const matched = scopeTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(p));
                 if (matched.length === 0) return null;
@@ -2015,10 +2114,11 @@
 
             const barsContainer = document.getElementById('barChartBarsContainer');
             barsContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
-            barsContainer.innerHTML = barData.map(v => {
+            barsContainer.innerHTML = barData.map((v, i) => {
                 const heightPct = Math.min((v / gridBarMax) * 100, 100);
+                const period = periods[i];
                 return `
-                    <div class="flex flex-col items-center justify-end h-full group relative">
+                    <div onclick="openBarChartDetailModal('${period}', '${filterVal}')" class="flex flex-col items-center justify-end h-full group relative cursor-pointer">
                         <div class="w-3/5 bg-amber-500 hover:bg-amber-600 rounded-t-md transition-all duration-200" style="height: ${heightPct}%"></div>
                         <span class="absolute -top-6 text-[9px] bg-gray-800 text-white px-1 rounded opacity-0 group-hover:opacity-100 transition">$${v}</span>
                     </div>
@@ -2028,6 +2128,88 @@
             const barXContainer = document.getElementById('barChartXLabels');
             barXContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
             barXContainer.innerHTML = periods.map(p => `<span>${isMonthly ? p.slice(2) : p}</span>`).join('');
+        }
+
+        // 點擊自選分類長條圖柱狀後開啟的明細彈窗邏輯
+        function openBarChartDetailModal(period, filterVal) {
+            if (!filterVal) return;
+
+            let scopeTxs = transactions;
+
+            // 根據目前的統計範圍進行篩選
+            if (currentStatsScope === 'public') {
+                scopeTxs = scopeTxs.filter(t => t.visibility === 'public');
+            } else if (currentStatsScope === 'payer') {
+                const loggedInMemberId = currentUser ? currentUser.memberId : null;
+                scopeTxs = scopeTxs.filter(t => loggedInMemberId && t.payer_id === loggedInMemberId);
+            } else if (currentStatsScope === 'personal') {
+                scopeTxs = scopeTxs.filter(t => currentUser && t.userUid === currentUser.uid && t.visibility === 'private');
+            } else {
+                scopeTxs = scopeTxs.filter(t => canViewItem(t));
+            }
+
+            let filteredTxs = [];
+            let filterName = '';
+            let catIcon = '📊';
+
+            if (filterVal.startsWith('cat:')) {
+                const catId = filterVal.substring(4);
+                const catObj = categories.find(c => c.id === catId) || { name: '其他', icon: '📌' };
+                filterName = catObj.name;
+                catIcon = catObj.icon;
+                filteredTxs = scopeTxs.filter(t => t.category_id === catId && t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(period));
+            } else if (filterVal.startsWith('sub:')) {
+                const [catId, subName] = filterVal.substring(4).split(':::');
+                const catObj = categories.find(c => c.id === catId) || { name: '其他', icon: '📌' };
+                filterName = `${catObj.name} › ${subName}`;
+                catIcon = catObj.icon;
+                filteredTxs = scopeTxs.filter(t => t.category_id === catId && t.subcategory === subName && t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(period));
+            }
+
+            filteredTxs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const totalSum = filteredTxs.reduce((s, t) => s + Number(t.amount), 0);
+
+            document.getElementById('barChartDetailModalTitle').innerHTML = `${catIcon} ${filterName} (${period})`;
+            document.getElementById('barChartDetailModalSubtitle').innerText = `期別：${period} · 共 ${filteredTxs.length} 筆 · 合計 $${totalSum.toLocaleString()}`;
+
+            const listContainer = document.getElementById('barChartDetailList');
+
+            if (filteredTxs.length === 0) {
+                listContainer.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs">該期間此分類無相關支出紀錄</div>`;
+            } else {
+                listContainer.innerHTML = filteredTxs.map(t => {
+                    const payer = members.find(m => m.id === t.payer_id) || { name: '不設定', avatar: '📌' };
+                    const isOwner = currentUser && t.userUid === currentUser.uid;
+                    const isPrivate = t.visibility === 'private';
+
+                    return `
+                        <div class="flex justify-between items-center p-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl transition text-xs">
+                            <div class="truncate pr-2">
+                                <div class="flex items-center space-x-1.5 font-bold text-gray-800">
+                                    <span>${t.date}</span>
+                                    ${t.subcategory ? `<span class="text-[10px] bg-white border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded font-normal">${t.subcategory}</span>` : ''}
+                                    ${isPrivate ? '<span class="text-[10px] bg-gray-200 text-gray-600 px-1 rounded">🔒</span>' : ''}
+                                </div>
+                                <p class="text-[11px] text-gray-500 mt-1 truncate">${t.payer_id ? payer.avatar + ' ' + payer.name : '👤 不設定'} ${t.note ? '· ' + t.note : ''}</p>
+                            </div>
+                            <div class="flex items-center space-x-2 shrink-0">
+                                <span class="font-extrabold text-sm text-red-500">-$${Number(t.amount).toLocaleString()}</span>
+                                ${isOwner ? `
+                                    <button onclick="closeBarChartDetailModal(); openTransactionModal('${t.id}');" class="text-gray-400 hover:text-indigo-600 p-1 text-xs"><i class="fa-solid fa-pen"></i></button>
+                                    <button onclick="deleteTransaction('${t.id}'); openBarChartDetailModal('${period}', '${filterVal}');" class="text-gray-400 hover:text-red-500 p-1 text-xs"><i class="fa-solid fa-trash"></i></button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('barChartDetailModal').classList.remove('hidden');
+        }
+
+        function closeBarChartDetailModal() {
+            document.getElementById('barChartDetailModal').classList.add('hidden');
         }
 
         // Modal Controls
