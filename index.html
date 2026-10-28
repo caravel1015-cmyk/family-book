@@ -231,9 +231,12 @@
 
         <!-- 統計分析視圖 -->
         <div id="viewStats" class="space-y-6 hidden">
-            <section class="grid grid-cols-2 gap-2 bg-gray-200 p-1 rounded-xl text-xs font-bold">
-                <button id="statsScopePublic" onclick="setStatsScope('public')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">🌐 家庭公開統計</button>
-                <button id="statsScopePersonal" onclick="setStatsScope('personal')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">🔒 個人專區統計</button>
+            <!-- 篩選條件按鈕 (全部、公開、付款人、個人) -->
+            <section class="grid grid-cols-4 gap-1 bg-gray-200 p-1 rounded-xl text-[11px] font-bold">
+                <button id="statsScopeAll" onclick="setStatsScope('all')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">📋 全部</button>
+                <button id="statsScopePublic" onclick="setStatsScope('public')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">🌐 公開</button>
+                <button id="statsScopePayer" onclick="setStatsScope('payer')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">💳 付款人</button>
+                <button id="statsScopePersonal" onclick="setStatsScope('personal')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">🔒 個人</button>
             </section>
 
             <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
@@ -273,7 +276,7 @@
             <section class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-chart-pie text-primary mr-1"></i> 支出分類佔比比較</h3>
-                    <span id="statsScopeLabel" class="text-xs text-gray-400">🌐 家庭公開</span>
+                    <span id="statsScopeLabel" class="text-xs text-gray-400">📋 全部</span>
                 </div>
                 <div id="categoryStatsContainer" class="space-y-3"></div>
             </section>
@@ -832,7 +835,7 @@
         let currentExpenseFilter = 'all';
         let currentTxType = 'expense';
         let currentRecTxType = 'expense';
-        let currentStatsScope = 'public';
+        let currentStatsScope = 'all'; // 預設改為全部
         let trendMode = 'monthly';
         let db = null;
         let auth = null;
@@ -1343,18 +1346,28 @@
 
         function setStatsScope(scope) {
             currentStatsScope = scope;
+            const btnAll = document.getElementById('statsScopeAll');
             const btnPublic = document.getElementById('statsScopePublic');
+            const btnPayer = document.getElementById('statsScopePayer');
             const btnPersonal = document.getElementById('statsScopePersonal');
             const label = document.getElementById('statsScopeLabel');
 
-            if (scope === 'public') {
+            [btnAll, btnPublic, btnPayer, btnPersonal].forEach(btn => {
+                btn.className = "py-2 rounded-lg text-gray-600 hover:text-gray-900 transition";
+            });
+
+            if (scope === 'all') {
+                btnAll.className = "py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition";
+                label.innerText = "📋 全部";
+            } else if (scope === 'public') {
                 btnPublic.className = "py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition";
-                btnPersonal.className = "py-2 rounded-lg text-gray-600 hover:text-gray-900 transition";
-                label.innerText = "🌐 家庭公開";
-            } else {
+                label.innerText = "🌐 公開";
+            } else if (scope === 'payer') {
+                btnPayer.className = "py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition";
+                label.innerText = "💳 付款人";
+            } else if (scope === 'personal') {
                 btnPersonal.className = "py-2 rounded-lg bg-white shadow-sm text-emerald-600 transition";
-                btnPublic.className = "py-2 rounded-lg text-gray-600 hover:text-gray-900 transition";
-                label.innerText = "🔒 個人專區";
+                label.innerText = "🔒 個人";
             }
             renderStatsView();
         }
@@ -1825,10 +1838,16 @@
             const endStr = document.getElementById('statsEndDate').value;
 
             let statsTxs = transactions;
+
             if (currentStatsScope === 'public') {
                 statsTxs = statsTxs.filter(t => t.visibility === 'public');
+            } else if (currentStatsScope === 'payer') {
+                const loggedInMemberId = currentUser ? currentUser.memberId : null;
+                statsTxs = statsTxs.filter(t => loggedInMemberId && t.payer_id === loggedInMemberId);
+            } else if (currentStatsScope === 'personal') {
+                statsTxs = statsTxs.filter(t => currentUser && t.userUid === currentUser.uid && t.visibility === 'private');
             } else {
-                statsTxs = statsTxs.filter(t => currentUser && t.userUid === currentUser.uid);
+                statsTxs = statsTxs.filter(t => canViewItem(t));
             }
 
             if (startStr) statsTxs = statsTxs.filter(t => t.date >= startStr);
@@ -1840,7 +1859,6 @@
             document.getElementById('statsTotalExpense').innerText = `$${totalExp.toLocaleString()}`;
             document.getElementById('statsTotalIncome').innerText = `$${totalInc.toLocaleString()}`;
 
-            // 1. 分類佔比
             const catContainer = document.getElementById('categoryStatsContainer');
             const expTxs = statsTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse');
 
@@ -1873,7 +1891,6 @@
                 }).join('');
             }
 
-            // 2. 趨勢圖邏輯 (折線圖 & 長條圖)
             renderTrendCharts(statsTxs);
         }
 
@@ -1907,18 +1924,22 @@
 
             document.getElementById('trendRangeLabel').innerText = `${periods[0]} ~ ${periods[periods.length - 1]}`;
 
-            // 計算收支折線圖數據
+            // --- 修正處：若該月份無資料，回傳 null 而非 0，避免圖表在空白月份硬連線或畫出紅綠線 ---
             const expenseData = periods.map(p => {
-                return scopeTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(p))
-                               .reduce((s, t) => s + Number(t.amount), 0);
+                const matched = scopeTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(p));
+                if (matched.length === 0) return null;
+                return matched.reduce((s, t) => s + Number(t.amount), 0);
             });
 
             const incomeData = periods.map(p => {
-                return scopeTxs.filter(t => t.type === 'income' && t.date.startsWith(p))
-                              .reduce((s, t) => s + Number(t.amount), 0);
+                const matched = scopeTxs.filter(t => t.type === 'income' && t.date.startsWith(p));
+                if (matched.length === 0) return null;
+                return matched.reduce((s, t) => s + Number(t.amount), 0);
             });
 
-            const maxVal = Math.max(...expenseData, ...incomeData, 100);
+            const validExp = expenseData.filter(v => v !== null);
+            const validInc = incomeData.filter(v => v !== null);
+            const maxVal = Math.max(...validExp, ...validInc, 100);
             const gridMax = Math.ceil(maxVal / 400) * 400 || 400;
 
             document.getElementById('lineChartY3').innerText = gridMax.toLocaleString();
@@ -1931,26 +1952,30 @@
 
             let expPoints = [];
             let incPoints = [];
+            let expCircles = [];
+            let incCircles = [];
 
             for (let i = 0; i < n; i++) {
                 const x = n > 1 ? (i / (n - 1)) * 100 : 50;
-                const yExp = 100 - (expenseData[i] / gridMax) * 100;
-                const yInc = 100 - (incomeData[i] / gridMax) * 100;
-                expPoints.push(`${x},${yExp}`);
-                incPoints.push(`${x},${yInc}`);
+                
+                if (expenseData[i] !== null) {
+                    const yExp = 100 - (expenseData[i] / gridMax) * 100;
+                    expPoints.push(`${x},${yExp}`);
+                    expCircles.push(`<circle cx="${x}%" cy="${yExp}%" r="3.5" fill="#EF4444" />`);
+                }
+                
+                if (incomeData[i] !== null) {
+                    const yInc = 100 - (incomeData[i] / gridMax) * 100;
+                    incPoints.push(`${x},${yInc}`);
+                    incCircles.push(`<circle cx="${x}%" cy="${yInc}%" r="3.5" fill="#10B981" />`);
+                }
             }
 
             svg.innerHTML = `
-                <polyline fill="none" stroke="#EF4444" stroke-width="2.5" points="${expPoints.join(' ')}" />
-                <polyline fill="none" stroke="#10B981" stroke-width="2.5" points="${incPoints.join(' ')}" />
-                ${expPoints.map(p => {
-                    const [px, py] = p.split(',');
-                    return `<circle cx="${px}%" cy="${py}%" r="3.5" fill="#EF4444" />`;
-                }).join('')}
-                ${incPoints.map(p => {
-                    const [px, py] = p.split(',');
-                    return `<circle cx="${px}%" cy="${py}%" r="3.5" fill="#10B981" />`;
-                }).join('')}
+                ${expPoints.length > 0 ? `<polyline fill="none" stroke="#EF4444" stroke-width="2.5" points="${expPoints.join(' ')}" />` : ''}
+                ${incPoints.length > 0 ? `<polyline fill="none" stroke="#10B981" stroke-width="2.5" points="${incPoints.join(' ')}" />` : ''}
+                ${expCircles.join('')}
+                ${incCircles.join('')}
             `;
 
             // X 軸標籤
@@ -2012,9 +2037,6 @@
             document.getElementById('txModalTitle').innerText = txId ? '編輯記帳' : '新增記帳';
 
             initFormSelects();
-            const defaultPayer = getDefaultPayerId();
-            document.getElementById('txPayer').value = defaultPayer;
-            handlePayerChange('tx');
 
             if (txId) {
                 const t = transactions.find(x => x.id === txId);
@@ -2035,6 +2057,9 @@
             } else {
                 setTxType('expense');
                 document.getElementById('txDate').value = getTodayStr();
+                const defaultPayer = getDefaultPayerId();
+                document.getElementById('txPayer').value = defaultPayer;
+                handlePayerChange('tx');
             }
 
             document.getElementById('transactionModal').classList.remove('hidden');
@@ -2169,9 +2194,6 @@
             document.getElementById('recTxModalTitle').innerText = rtId ? '編輯循環記帳' : '新增循環記帳設定';
 
             initFormSelects();
-            const defaultPayer = getDefaultPayerId();
-            document.getElementById('recTxPayer').value = defaultPayer;
-            handlePayerChange('rectx');
             toggleRecTxEndInput('never');
 
             if (rtId) {
@@ -2203,6 +2225,9 @@
             } else {
                 setRecTxType('expense');
                 document.getElementById('recTxNextDate').value = getTodayStr();
+                const defaultPayer = getDefaultPayerId();
+                document.getElementById('recTxPayer').value = defaultPayer;
+                handlePayerChange('rectx');
             }
 
             document.getElementById('recurringTxModal').classList.remove('hidden');
@@ -2467,7 +2492,6 @@
         }
 
         function renderSettingsView() {
-            // 成員清單 (增加修改成員按鈕)
             const memberContainer = document.getElementById('memberListAdmin');
             memberContainer.innerHTML = members.map(m => `
                 <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-gray-100 text-xs shadow-2xs">
@@ -2483,7 +2507,6 @@
                 </div>
             `).join('');
 
-            // 分類與次分類清單 (增加修改分類與上下移動排序按鈕)
             const catContainer = document.getElementById('categoryListAdmin');
             catContainer.innerHTML = categories.map((c, index) => `
                 <div class="bg-white p-3 rounded-xl border border-gray-100 space-y-2 text-xs shadow-2xs">
@@ -2501,7 +2524,6 @@
                         </div>
                     </div>
 
-                    <!-- 次分類清單 -->
                     <div class="flex flex-wrap gap-1.5 items-center pt-1 border-t border-gray-50">
                         ${(c.subcategories || []).map(sub => `
                             <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg text-[11px] flex items-center gap-1">
@@ -2646,7 +2668,6 @@
             const newIndex = index + direction;
             if (newIndex < 0 || newIndex >= categories.length) return;
 
-            // 交換位置
             const temp = categories[index];
             categories[index] = categories[newIndex];
             categories[newIndex] = temp;
@@ -2724,9 +2745,8 @@
             renderSettingsView();
         }
 
-        // 匯出 CSV 與 JSON 備份
         function exportTransactionsCSV() {
-            let csv = '\uFEFF'; // UTF-8 BOM
+            let csv = '\uFEFF';
             csv += '日期,類型,金額,主分類,次分類,付款人,瀏覽權限,性質備註,說明,建立者UID\n';
 
             transactions.forEach(t => {
@@ -2743,7 +2763,7 @@
         }
 
         function exportDiariesCSV() {
-            let csv = '\uFEFF'; // UTF-8 BOM
+            let csv = '\uFEFF';
             csv += '日期,標題,心情,天氣,作者,瀏覽權限,內容,建立者UID\n';
 
             diaries.forEach(d => {
@@ -2790,7 +2810,6 @@
                         if (data.reminders) reminders = data.reminders;
 
                         if (db) {
-                            // 同步還原資料至 Firestore
                             for (let m of members) await window.fbModules.setDoc(window.fbModules.doc(db, 'familyMembers', m.id), m);
                             for (let c of categories) await window.fbModules.setDoc(window.fbModules.doc(db, 'categories', c.id), c);
                         }
