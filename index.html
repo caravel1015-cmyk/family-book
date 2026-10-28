@@ -198,9 +198,16 @@
                 <div id="panelRecTx" class="space-y-3">
                     <div class="flex justify-between items-center px-1">
                         <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-repeat text-indigo-600 mr-1"></i> 定期循環記帳清單</h3>
-                        <button onclick="openRecurringTxModal()" class="text-xs bg-indigo-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-indigo-700 transition flex items-center gap-1">
-                            <i class="fa-solid fa-plus"></i> 新增設定
-                        </button>
+                        <div class="flex items-center space-x-2">
+                            <!-- 排序切換按鈕 -->
+                            <div class="bg-gray-200 p-0.5 rounded-lg flex text-[11px] font-bold">
+                                <button id="sortBtnRecTx-date" onclick="setSubTabSortMode('recTx', 'date')" class="px-2 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition">📅 日期</button>
+                                <button id="sortBtnRecTx-custom" onclick="setSubTabSortMode('recTx', 'custom')" class="px-2 py-1 rounded-md text-gray-600 transition">🖐️ 自訂</button>
+                            </div>
+                            <button onclick="openRecurringTxModal()" class="text-xs bg-indigo-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-indigo-700 transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> 新增
+                            </button>
+                        </div>
                     </div>
                     <div id="recurringTxList" class="space-y-3"></div>
                 </div>
@@ -209,9 +216,16 @@
                 <div id="panelRecEvent" class="space-y-3 hidden">
                     <div class="flex justify-between items-center px-1">
                         <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-calendar-days text-amber-600 mr-1"></i> 週期性家庭事件</h3>
-                        <button onclick="openRecurringEventModal()" class="text-xs bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-amber-700 transition flex items-center gap-1">
-                            <i class="fa-solid fa-plus"></i> 新增事件
-                        </button>
+                        <div class="flex items-center space-x-2">
+                            <!-- 排序切換按鈕 -->
+                            <div class="bg-gray-200 p-0.5 rounded-lg flex text-[11px] font-bold">
+                                <button id="sortBtnRecEvent-date" onclick="setSubTabSortMode('recEvent', 'date')" class="px-2 py-1 rounded-md bg-white text-amber-600 shadow-xs transition">📅 日期</button>
+                                <button id="sortBtnRecEvent-custom" onclick="setSubTabSortMode('recEvent', 'custom')" class="px-2 py-1 rounded-md text-gray-600 transition">🖐️ 自訂</button>
+                            </div>
+                            <button onclick="openRecurringEventModal()" class="text-xs bg-amber-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-amber-700 transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> 新增
+                            </button>
+                        </div>
                     </div>
                     <div id="recurringEventList" class="space-y-3"></div>
                 </div>
@@ -220,9 +234,16 @@
                 <div id="panelReminder" class="space-y-3 hidden">
                     <div class="flex justify-between items-center px-1">
                         <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-bell text-emerald-600 mr-1"></i> 近期與單次事件提醒</h3>
-                        <button onclick="openReminderModal()" class="text-xs bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-emerald-700 transition flex items-center gap-1">
-                            <i class="fa-solid fa-plus"></i> 新增提醒
-                        </button>
+                        <div class="flex items-center space-x-2">
+                            <!-- 排序切換按鈕 -->
+                            <div class="bg-gray-200 p-0.5 rounded-lg flex text-[11px] font-bold">
+                                <button id="sortBtnReminder-date" onclick="setSubTabSortMode('reminder', 'date')" class="px-2 py-1 rounded-md bg-white text-emerald-600 shadow-xs transition">📅 日期</button>
+                                <button id="sortBtnReminder-custom" onclick="setSubTabSortMode('reminder', 'custom')" class="px-2 py-1 rounded-md text-gray-600 transition">🖐️ 自訂</button>
+                            </div>
+                            <button onclick="openReminderModal()" class="text-xs bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-xl hover:bg-emerald-700 transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus"></i> 新增
+                            </button>
+                        </div>
                     </div>
                     <div id="reminderList" class="space-y-3"></div>
                 </div>
@@ -846,16 +867,23 @@
         ];
 
         let recurringTransactions = JSON.parse(localStorage.getItem('family_recurring_txs')) || [
-            { id: 'rt1', type: 'expense', amount: 12000, category_id: 'c4', subcategory: '房屋租金', payer_id: 'm1', interval: 1, freqUnit: 'monthly', nextDate: getTodayStr(), endType: 'never', endDate: '', endCount: null, currentCount: 0, note: '房屋租金扣款', visibility: 'public', userUid: 'demo1' }
+            { id: 'rt1', type: 'expense', amount: 12000, category_id: 'c4', subcategory: '房屋租金', payer_id: 'm1', interval: 1, freqUnit: 'monthly', nextDate: getTodayStr(), endType: 'never', endDate: '', endCount: null, currentCount: 0, note: '房屋租金扣款', visibility: 'public', userUid: 'demo1', order: 0 }
         ];
 
         let recurringEvents = JSON.parse(localStorage.getItem('family_recurring_events')) || [
-            { id: 're1', title: '全家定期大掃除', interval: 1, freqUnit: 'monthly', nextDate: getTodayStr(), endType: 'never', endDate: '', endCount: null, currentCount: 0, remindDays: 3, note: '清洗窗簾與冷氣濾網', visibility: 'public', userUid: 'demo1' }
+            { id: 're1', title: '全家定期大掃除', interval: 1, freqUnit: 'monthly', nextDate: getTodayStr(), endType: 'never', endDate: '', endCount: null, currentCount: 0, remindDays: 3, note: '清洗窗簾與冷氣濾網', visibility: 'public', userUid: 'demo1', order: 0 }
         ];
 
         let reminders = JSON.parse(localStorage.getItem('family_reminders')) || [
-            { id: 'rm1', title: '繳納信用卡費', date: getTodayStr(), time: '20:00', note: '金額約 $5,400', completed: false, visibility: 'public', userUid: 'demo1' }
+            { id: 'rm1', title: '繳納信用卡費', date: getTodayStr(), time: '20:00', note: '金額約 $5,400', completed: false, visibility: 'public', userUid: 'demo1', order: 0 }
         ];
+
+        // 各分頁排序偏好記錄 (預設 date)
+        let recurringSortModes = JSON.parse(localStorage.getItem('family_recurring_sort_modes')) || {
+            recTx: 'date',
+            recEvent: 'date',
+            reminder: 'date'
+        };
 
         let currentUser = null;
         let currentTab = 'timeline';
@@ -863,12 +891,11 @@
         let currentExpenseFilter = 'all';
         let currentTxType = 'expense';
         let currentRecTxType = 'expense';
-        let currentStatsScope = 'all'; // 預設改為全部
+        let currentStatsScope = 'all';
         let trendMode = 'monthly';
         let db = null;
         let auth = null;
 
-        // 返回鍵防退出控制變數
         let lastBackPressTime = 0;
 
         function getTodayStr() { return new Date().toISOString().split('T')[0]; }
@@ -925,39 +952,31 @@
             document.getElementById('recEventNextDate').value = getTodayStr();
             document.getElementById('reminderDate').value = getTodayStr();
 
-            // 初始化 History API 狀態以攔截返回鍵
             history.pushState({ page: 'home', tab: currentTab }, '', '');
             window.addEventListener('popstate', handlePopState);
         };
 
-        // 監聽手機返回鍵 / 瀏覽器上一頁事件
         function handlePopState(event) {
-            // 1. 如果有任何開啟中的 Modal，優先關閉 Modal 而不是切換分頁
             if (closeAnyOpenModal()) {
                 history.pushState({ page: 'home', tab: currentTab }, '', '');
                 return;
             }
 
-            // 2. 如果目前不在首分頁（timeline），切回首分頁
             if (currentTab !== 'timeline') {
-                switchTab('timeline', false); // false 代表不重複推入 history
+                switchTab('timeline', false);
                 return;
             }
 
-            // 3. 若已經在首分頁且無 Modal，實作「再點一次退出」提醒
             const now = Date.now();
             if (now - lastBackPressTime < 2000) {
-                // 兩秒內再點一次，允許真正退出網頁（退回歷史上一頁）
                 history.back();
             } else {
                 lastBackPressTime = now;
                 alert('再點一次返回鍵將退出目前網頁');
-                // 重新推入狀態以保持留在頁面內
                 history.pushState({ page: 'home', tab: currentTab }, '', '');
             }
         }
 
-        // 檢查並關閉任意開啟中的 Modal，若有關閉則回傳 true
         function closeAnyOpenModal() {
             let closedAny = false;
             const modals = ['categoryDetailModal', 'barChartDetailModal', 'transactionModal', 'diaryModal', 'recurringTxModal', 'recurringEventModal', 'reminderModal', 'settingsModal'];
@@ -1047,7 +1066,6 @@
                     auth = window.fbModules.getAuth(app);
                     db = window.fbModules.getFirestore(app);
 
-                    // 初次雲端即時監聽與預設種子資料初始化
                     listenCloudData();
 
                     window.fbModules.onAuthStateChanged(auth, async (user) => {
@@ -1120,7 +1138,6 @@
         async function seedFirestoreDefaultsIfEmpty() {
             if (!db) return;
             try {
-                // 檢查 members
                 const memSnap = await window.fbModules.getDocs(window.fbModules.collection(db, 'familyMembers'));
                 if (memSnap.empty) {
                     for (let m of initialMembersSeed) {
@@ -1128,7 +1145,6 @@
                     }
                 }
 
-                // 檢查 categories
                 const catSnap = await window.fbModules.getDocs(window.fbModules.collection(db, 'categories'));
                 if (catSnap.empty) {
                     for (let c of initialCategoriesSeed) {
@@ -1142,15 +1158,12 @@
 
         function listenCloudData() {
             if (!db) return;
-
-            // 檢查並寫入初始成員與分類資料
             seedFirestoreDefaultsIfEmpty();
 
-            // 1. 成員資料即時同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'familyMembers'), (snap) => {
                 if (!snap.empty) {
                     members = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    members.sort((a, b) => (a.order || 0) - (b.order || 0)); // 👉 依照 order 排序
+                    members.sort((a, b) => (a.order || 0) - (b.order || 0));
                     saveDataLocallyOnly();
                     initFormSelects();
                     renderSettingsView();
@@ -1158,7 +1171,6 @@
                 }
             });
 
-            // 2. 分類資料即時同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'categories'), (snap) => {
                 if (!snap.empty) {
                     categories = snap.docs.map(doc => {
@@ -1169,7 +1181,7 @@
                             subcategories: Array.isArray(data.subcategories) ? data.subcategories : []
                         };
                     });
-                    categories.sort((a, b) => (a.order || 0) - (b.order || 0)); // 👉 依照 order 排序
+                    categories.sort((a, b) => (a.order || 0) - (b.order || 0));
                     saveDataLocallyOnly();
                     initFormSelects();
                     renderSettingsView();
@@ -1177,33 +1189,31 @@
                 }
             });
 
-            // 3. 記帳紀錄同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'transactions'), (snap) => {
                 transactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
             });
 
-            // 4. 日記同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'diaries'), (snap) => {
                 diaries = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderApp();
             });
 
-            // 5. 循環記帳同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'recurringTransactions'), (snap) => {
                 recurringTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                recurringTransactions.sort((a, b) => (a.order || 0) - (b.order || 0));
                 renderApp();
             });
 
-            // 6. 循環事件同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'recurringEvents'), (snap) => {
                 recurringEvents = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                recurringEvents.sort((a, b) => (a.order || 0) - (b.order || 0));
                 renderApp();
             });
 
-            // 7. 事件提醒同步
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'reminders'), (snap) => {
                 reminders = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                reminders.sort((a, b) => (a.order || 0) - (b.order || 0));
                 renderApp();
             });
         }
@@ -1211,6 +1221,7 @@
         function saveDataLocallyOnly() {
             localStorage.setItem('family_members', JSON.stringify(members));
             localStorage.setItem('family_categories', JSON.stringify(categories));
+            localStorage.setItem('family_recurring_sort_modes', JSON.stringify(recurringSortModes));
         }
 
         function saveData() {
@@ -1222,6 +1233,49 @@
                 localStorage.setItem('family_recurring_events', JSON.stringify(recurringEvents));
                 localStorage.setItem('family_reminders', JSON.stringify(reminders));
             }
+        }
+
+        // 切換子面板的排序模式 (date / custom)
+        function setSubTabSortMode(subTabKey, mode) {
+            recurringSortModes[subTabKey] = mode;
+            saveDataLocallyOnly();
+            renderRecurringView();
+        }
+
+        // 上下移動自訂順序
+        async function moveRecurringItem(subTabKey, itemId, direction) {
+            let listRef;
+            let colName;
+            if (subTabKey === 'recTx') { listRef = recurringTransactions; colName = 'recurringTransactions'; }
+            else if (subTabKey === 'recEvent') { listRef = recurringEvents; colName = 'recurringEvents'; }
+            else { listRef = reminders; colName = 'reminders'; }
+
+            const index = listRef.findIndex(x => x.id === itemId);
+            if (index === -1) return;
+
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= listRef.length) return;
+
+            const temp = listRef[index];
+            listRef[index] = listRef[newIndex];
+            listRef[newIndex] = temp;
+
+            listRef.forEach((item, idx) => { item.order = idx; });
+            saveData();
+
+            if (db) {
+                try {
+                    const updatePromises = listRef.map((item, idx) => {
+                        const ref = window.fbModules.doc(db, colName, item.id);
+                        return window.fbModules.setDoc(ref, { ...item, order: idx }, { merge: true });
+                    });
+                    await Promise.all(updatePromises);
+                } catch (e) {
+                    console.error("同步自訂順序至雲端失敗：", e);
+                }
+            }
+
+            renderRecurringView();
         }
 
         function switchTab(tab, pushHistory = true) {
@@ -1579,13 +1633,30 @@
             const unitMap = { daily: '天', weekly: '週', monthly: '個月', yearly: '年' };
             const today = getTodayStr();
 
+            // 1. 循環記帳渲染與排序設定
+            const recTxSortMode = recurringSortModes.recTx || 'date';
+            const btnRecTxDate = document.getElementById('sortBtnRecTx-date');
+            const btnRecTxCustom = document.getElementById('sortBtnRecTx-custom');
+            if (recTxSortMode === 'date') {
+                btnRecTxDate.className = "px-2 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition";
+                btnRecTxCustom.className = "px-2 py-1 rounded-md text-gray-600 transition";
+            } else {
+                btnRecTxCustom.className = "px-2 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition";
+                btnRecTxDate.className = "px-2 py-1 rounded-md text-gray-600 transition";
+            }
+
             const recTxContainer = document.getElementById('recurringTxList');
-            const visibleRecTxs = recurringTransactions.filter(rt => canViewItem(rt));
+            let visibleRecTxs = recurringTransactions.filter(rt => canViewItem(rt));
+            if (recTxSortMode === 'date') {
+                visibleRecTxs.sort((a, b) => new Date(a.nextDate) - new Date(b.nextDate));
+            } else {
+                visibleRecTxs.sort((a, b) => (a.order || 0) - (b.order || 0));
+            }
 
             if (visibleRecTxs.length === 0) {
                 recTxContainer.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs bg-white rounded-2xl border border-gray-100">尚無定期循環記帳設定</div>`;
             } else {
-                recTxContainer.innerHTML = visibleRecTxs.map(rt => {
+                recTxContainer.innerHTML = visibleRecTxs.map((rt, index) => {
                     const cat = categories.find(c => c.id === rt.category_id) || { name: '其他', icon: '📌' };
                     const payer = members.find(m => m.id === rt.payer_id) || { name: '不設定', avatar: '📌' };
                     const isDue = rt.nextDate <= today;
@@ -1604,6 +1675,12 @@
                         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-2 ${isExpired ? 'opacity-60 bg-gray-50' : ''}">
                             <div class="flex justify-between items-start">
                                 <div class="flex items-center space-x-2.5">
+                                    ${recTxSortMode === 'custom' ? `
+                                        <div class="flex flex-col space-y-0.5 text-gray-300">
+                                            <button onclick="moveRecurringItem('recTx', '${rt.id}', -1)" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="hover:text-primary"'} title="上移"><i class="fa-solid fa-chevron-up text-xs"></i></button>
+                                            <button onclick="moveRecurringItem('recTx', '${rt.id}', 1)" ${index === visibleRecTxs.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="hover:text-primary"'} title="下移"><i class="fa-solid fa-chevron-down text-xs"></i></button>
+                                        </div>
+                                    ` : ''}
                                     <span class="text-xl bg-indigo-50 p-2 rounded-xl text-indigo-600">${cat.icon}</span>
                                     <div>
                                         <h4 class="font-bold text-sm text-gray-900 flex items-center gap-1.5">
@@ -1632,13 +1709,30 @@
                 }).join('');
             }
 
+            // 2. 循環事件渲染與排序設定
+            const recEventSortMode = recurringSortModes.recEvent || 'date';
+            const btnRecEventDate = document.getElementById('sortBtnRecEvent-date');
+            const btnRecEventCustom = document.getElementById('sortBtnRecEvent-custom');
+            if (recEventSortMode === 'date') {
+                btnRecEventDate.className = "px-2 py-1 rounded-md bg-white text-amber-600 shadow-xs transition";
+                btnRecEventCustom.className = "px-2 py-1 rounded-md text-gray-600 transition";
+            } else {
+                btnRecEventCustom.className = "px-2 py-1 rounded-md bg-white text-amber-600 shadow-xs transition";
+                btnRecEventDate.className = "px-2 py-1 rounded-md text-gray-600 transition";
+            }
+
             const recEventContainer = document.getElementById('recurringEventList');
-            const visibleRecEvents = recurringEvents.filter(re => canViewItem(re));
+            let visibleRecEvents = recurringEvents.filter(re => canViewItem(re));
+            if (recEventSortMode === 'date') {
+                visibleRecEvents.sort((a, b) => new Date(a.nextDate) - new Date(b.nextDate));
+            } else {
+                visibleRecEvents.sort((a, b) => (a.order || 0) - (b.order || 0));
+            }
 
             if (visibleRecEvents.length === 0) {
                 recEventContainer.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs bg-white rounded-2xl border border-gray-100">尚無週期性事件設定</div>`;
             } else {
-                recEventContainer.innerHTML = visibleRecEvents.map(re => {
+                recEventContainer.innerHTML = visibleRecEvents.map((re, index) => {
                     const isOwner = currentUser && re.userUid === currentUser.uid;
                     const isPrivate = re.visibility === 'private';
                     const isExpired = isRecurringExpired(re);
@@ -1653,13 +1747,21 @@
                     return `
                         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-2 ${isExpired ? 'opacity-60 bg-gray-50' : ''}">
                             <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-bold text-sm text-gray-900 flex items-center gap-1.5">
-                                        <i class="fa-solid fa-arrows-spin text-amber-500"></i>${re.title}
-                                        ${isPrivate ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md font-normal">🔒 私密</span>' : ''}
-                                        ${isExpired ? '<span class="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-md font-bold">已結束</span>' : ''}
-                                    </h4>
-                                    <p class="text-xs text-gray-500 mt-1">每 <span class="font-bold text-amber-600">${interval} ${unitMap[freqUnit]}</span> (${endDesc}) · 下次：<span class="font-bold text-gray-700">${re.nextDate}</span> (<span class="text-amber-700 font-bold">${remindDays}天前提醒</span>)</p>
+                                <div class="flex items-center space-x-2.5">
+                                    ${recEventSortMode === 'custom' ? `
+                                        <div class="flex flex-col space-y-0.5 text-gray-300">
+                                            <button onclick="moveRecurringItem('recEvent', '${re.id}', -1)" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="hover:text-amber-600"'} title="上移"><i class="fa-solid fa-chevron-up text-xs"></i></button>
+                                            <button onclick="moveRecurringItem('recEvent', '${re.id}', 1)" ${index === visibleRecEvents.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="hover:text-amber-600"'} title="下移"><i class="fa-solid fa-chevron-down text-xs"></i></button>
+                                        </div>
+                                    ` : ''}
+                                    <div>
+                                        <h4 class="font-bold text-sm text-gray-900 flex items-center gap-1.5">
+                                            <i class="fa-solid fa-arrows-spin text-amber-500"></i>${re.title}
+                                            ${isPrivate ? '<span class="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-md font-normal">🔒 私密</span>' : ''}
+                                            ${isExpired ? '<span class="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-md font-bold">已結束</span>' : ''}
+                                        </h4>
+                                        <p class="text-xs text-gray-500 mt-1">每 <span class="font-bold text-amber-600">${interval} ${unitMap[freqUnit]}</span> (${endDesc}) · 下次：<span class="font-bold text-gray-700">${re.nextDate}</span> (<span class="text-amber-700 font-bold">${remindDays}天前提醒</span>)</p>
+                                    </div>
                                 </div>
                                 ${isOwner ? `
                                     <div class="flex space-x-1">
@@ -1675,21 +1777,43 @@
                 }).join('');
             }
 
+            // 3. 事件提醒渲染與排序設定
+            const reminderSortMode = recurringSortModes.reminder || 'date';
+            const btnReminderDate = document.getElementById('sortBtnReminder-date');
+            const btnReminderCustom = document.getElementById('sortBtnReminder-custom');
+            if (reminderSortMode === 'date') {
+                btnReminderDate.className = "px-2 py-1 rounded-md bg-white text-emerald-600 shadow-xs transition";
+                btnReminderCustom.className = "px-2 py-1 rounded-md text-gray-600 transition";
+            } else {
+                btnReminderCustom.className = "px-2 py-1 rounded-md bg-white text-emerald-600 shadow-xs transition";
+                btnReminderDate.className = "px-2 py-1 rounded-md text-gray-600 transition";
+            }
+
             const reminderContainer = document.getElementById('reminderList');
-            const visibleReminders = reminders.filter(rm => canViewItem(rm));
+            let visibleReminders = reminders.filter(rm => canViewItem(rm));
+            if (reminderSortMode === 'date') {
+                visibleReminders.sort((a, b) => new Date(a.date + ' ' + (a.time || '00:00')) - new Date(b.date + ' ' + (b.time || '00:00')));
+            } else {
+                visibleReminders.sort((a, b) => (a.order || 0) - (b.order || 0));
+            }
 
             if (visibleReminders.length === 0) {
                 reminderContainer.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs bg-white rounded-2xl border border-gray-100">尚無事件提醒</div>`;
             } else {
-                const sortedReminders = [...visibleReminders].sort((a, b) => new Date(a.date + ' ' + (a.time || '00:00')) - new Date(b.date + ' ' + (b.time || '00:00')));
-                reminderContainer.innerHTML = sortedReminders.map(rm => {
+                reminderContainer.innerHTML = visibleReminders.map((rm, index) => {
                     const isPast = rm.date < today && !rm.completed;
                     const isOwner = currentUser && rm.userUid === currentUser.uid;
                     const isPrivate = rm.visibility === 'private';
 
                     return `
                         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-start justify-between gap-3 ${rm.completed ? 'opacity-60 bg-gray-50' : ''}">
-                            <div class="flex items-start space-x-3">
+                            <div class="flex items-start space-x-2.5">
+                                ${reminderSortMode === 'custom' ? `
+                                    <div class="flex flex-col space-y-0.5 text-gray-300 pt-1">
+                                        <button onclick="moveRecurringItem('reminder', '${rm.id}', -1)" ${index === 0 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="hover:text-emerald-600"'} title="上移"><i class="fa-solid fa-chevron-up text-xs"></i></button>
+                                        <button onclick="moveRecurringItem('reminder', '${rm.id}', 1)" ${index === visibleReminders.length - 1 ? 'disabled class="opacity-20 cursor-not-allowed"' : 'class="hover:text-emerald-600"'} title="下移"><i class="fa-solid fa-chevron-down text-xs"></i></button>
+                                    </div>
+                                ` : ''}
                                 <button onclick="toggleReminderComplete('${rm.id}')" class="mt-0.5 text-lg ${rm.completed ? 'text-emerald-500' : 'text-gray-300 hover:text-emerald-500'} transition">
                                     <i class="fa-solid ${rm.completed ? 'fa-circle-check' : 'fa-circle'}"></i>
                                 </button>
@@ -1924,14 +2048,12 @@
             renderTrendCharts(statsTxs);
         }
 
-        // 點擊支出分類佔比後開啟的明細彈窗邏輯
         function openCategoryDetailModal(catId) {
             const startStr = document.getElementById('statsStartDate').value;
             const endStr = document.getElementById('statsEndDate').value;
 
             let filteredTxs = transactions;
 
-            // 根據目前的統計範圍進行篩選
             if (currentStatsScope === 'public') {
                 filteredTxs = filteredTxs.filter(t => t.visibility === 'public');
             } else if (currentStatsScope === 'payer') {
@@ -1946,7 +2068,6 @@
             if (startStr) filteredTxs = filteredTxs.filter(t => t.date >= startStr);
             if (endStr) filteredTxs = filteredTxs.filter(t => t.date <= endStr);
 
-            // 篩選出該主分類的支出 (排除報帳)
             const catTxs = filteredTxs.filter(t => t.category_id === catId && t.type === 'expense' && t.tag !== 'reimburse')
                                       .sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -2025,7 +2146,6 @@
 
             document.getElementById('trendRangeLabel').innerText = `${periods[0]} ~ ${periods[periods.length - 1]}`;
 
-            // 若該月份無資料，回傳 null 而非 0，避免圖表在空白月份硬連線或畫出紅綠線
             const expenseData = periods.map(p => {
                 const matched = scopeTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(p));
                 if (matched.length === 0) return null;
@@ -2079,12 +2199,10 @@
                 ${incCircles.join('')}
             `;
 
-            // X 軸標籤
             const xContainer = document.getElementById('lineChartXLabels');
             xContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
             xContainer.innerHTML = periods.map(p => `<span>${isMonthly ? p.slice(2) : p}</span>`).join('');
 
-            // 3. 長條圖數據（自選分類，亦需排除報帳）
             const filterVal = document.getElementById('statsTrendCategoryFilter').value;
             let barData = [];
 
@@ -2132,13 +2250,11 @@
             barXContainer.innerHTML = periods.map(p => `<span>${isMonthly ? p.slice(2) : p}</span>`).join('');
         }
 
-        // 點擊自選分類長條圖柱狀後開啟的明細彈窗邏輯
         function openBarChartDetailModal(period, filterVal) {
             if (!filterVal) return;
 
             let scopeTxs = transactions;
 
-            // 根據目前的統計範圍進行篩選
             if (currentStatsScope === 'public') {
                 scopeTxs = scopeTxs.filter(t => t.visibility === 'public');
             } else if (currentStatsScope === 'payer') {
@@ -2214,7 +2330,6 @@
             document.getElementById('barChartDetailModal').classList.add('hidden');
         }
 
-        // Modal Controls
         function openTransactionModal(txId = null) {
             document.getElementById('transactionForm').reset();
             document.getElementById('txId').value = '';
@@ -2441,14 +2556,15 @@
                 currentCount: id ? (recurringTransactions.find(x => x.id === id)?.currentCount || 0) : 0,
                 visibility: document.getElementById('recTxVisibility').value,
                 note: document.getElementById('recTxNote').value.trim(),
-                userUid: currentUser ? currentUser.uid : 'demo1'
+                userUid: currentUser ? currentUser.uid : 'demo1',
+                order: id ? (recurringTransactions.find(x => x.id === id)?.order || 0) : recurringTransactions.length
             };
 
             if (db) {
                 if (id) {
                     await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringTransactions', id), recTxData);
                 } else {
-                    await window.fbModules.addDoc(window.fbModules.collection(db, 'recurringTransactions'), recTxData);
+                    await window.fbModules.setDoc(window.fbModules.doc(db, 'recurringTransactions', 'rt_' + Date.now()), recTxData);
                 }
             } else {
                 if (id) {
@@ -2529,14 +2645,15 @@
                 remindDays: Number(document.getElementById('recEventRemindDays').value),
                 visibility: document.getElementById('recEventVisibility').value,
                 note: document.getElementById('recEventNote').value.trim(),
-                userUid: currentUser ? currentUser.uid : 'demo1'
+                userUid: currentUser ? currentUser.uid : 'demo1',
+                order: id ? (recurringEvents.find(x => x.id === id)?.order || 0) : recurringEvents.length
             };
 
             if (db) {
                 if (id) {
                     await window.fbModules.updateDoc(window.fbModules.doc(db, 'recurringEvents', id), recEventData);
                 } else {
-                    await window.fbModules.addDoc(window.fbModules.collection(db, 'recurringEvents'), recEventData);
+                    await window.fbModules.setDoc(window.fbModules.doc(db, 'recurringEvents', 're_' + Date.now()), recEventData);
                 }
             } else {
                 if (id) {
@@ -2618,14 +2735,15 @@
                 visibility: document.getElementById('reminderVisibility').value,
                 note: document.getElementById('reminderNote').value.trim(),
                 completed: id ? (reminders.find(x => x.id === id)?.completed || false) : false,
-                userUid: currentUser ? currentUser.uid : 'demo1'
+                userUid: currentUser ? currentUser.uid : 'demo1',
+                order: id ? (reminders.find(x => x.id === id)?.order || 0) : reminders.length
             };
 
             if (db) {
                 if (id) {
                     await window.fbModules.updateDoc(window.fbModules.doc(db, 'reminders', id), reminderData);
                 } else {
-                    await window.fbModules.addDoc(window.fbModules.collection(db, 'reminders'), reminderData);
+                    await window.fbModules.setDoc(window.fbModules.doc(db, 'reminders', 'rm_' + Date.now()), reminderData);
                 }
             } else {
                 if (id) {
@@ -2734,7 +2852,7 @@
                 name,
                 avatar,
                 email,
-                order: members.length // 👉 賦予新的 order
+                order: members.length
             };
 
             if (db) {
@@ -2809,7 +2927,7 @@
             if (db) {
                 try {
                     const updatePromises = members.map((mem, idx) => {
-                        mem.order = idx; // 👉 調整本機陣列中的 order
+                        mem.order = idx;
                         const memRef = window.fbModules.doc(db, 'familyMembers', mem.id);
                         return window.fbModules.setDoc(memRef, {
                             ...mem,
@@ -2839,7 +2957,7 @@
                 icon,
                 type,
                 subcategories: [],
-                order: categories.length // 👉 賦予新的 order
+                order: categories.length
             };
 
             if (db) {
@@ -2899,7 +3017,7 @@
             if (db) {
                 try {
                     const updatePromises = categories.map((cat, idx) => {
-                        cat.order = idx; // 👉 調整本機陣列中的 order
+                        cat.order = idx;
                         const catRef = window.fbModules.doc(db, 'categories', cat.id);
                         return window.fbModules.setDoc(catRef, {
                             ...cat,
