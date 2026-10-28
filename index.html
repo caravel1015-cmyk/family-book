@@ -1407,17 +1407,35 @@
         }
 
         function setTxType(type) {
+            const currentPayer = document.getElementById('txPayer').value;
+            const currentVis = document.getElementById('txVisibility').value;
+            
             currentTxType = type;
             document.getElementById('typeExpense').className = type === 'expense' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-red-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
             document.getElementById('typeIncome').className = type === 'income' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-emerald-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
             initFormSelects();
+
+            if (currentPayer) {
+                document.getElementById('txPayer').value = currentPayer;
+                document.getElementById('txVisibility').value = currentVis;
+                handlePayerChange('tx');
+            }
         }
 
         function setRecTxType(type) {
+            const currentPayer = document.getElementById('recTxPayer').value;
+            const currentVis = document.getElementById('recTxVisibility').value;
+
             currentRecTxType = type;
             document.getElementById('recTypeExpense').className = type === 'expense' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-red-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
             document.getElementById('recTypeIncome').className = type === 'income' ? "py-2 text-sm font-bold rounded-lg bg-white shadow-sm text-emerald-600 transition" : "py-2 text-sm font-bold rounded-lg text-gray-600 transition";
             initFormSelects();
+
+            if (currentPayer) {
+                document.getElementById('recTxPayer').value = currentPayer;
+                document.getElementById('recTxVisibility').value = currentVis;
+                handlePayerChange('rectx');
+            }
         }
 
         function setExpenseFilter(filter) {
