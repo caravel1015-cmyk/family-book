@@ -96,7 +96,7 @@
             <section class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p class="text-xs text-indigo-100 uppercase tracking-wider font-semibold">家庭公開總支出 (不含報帳)</p>
+                        <p class="text-xs text-indigo-100 uppercase tracking-wider font-semibold">支出統計 (不含報帳)</p>
                         <h2 id="totalExpenseDisplay" class="text-3xl font-extrabold mt-1">$0</h2>
                     </div>
                     <div class="text-right">
@@ -2850,7 +2850,7 @@
                         ${(c.subcategories || []).map(sub => `
                             <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg text-[11px] flex items-center gap-1">
                                 ${sub}
-                                <button onclick="deleteSubcategory('${c.id}', '${sub}')" class="text-gray-400 hover:text-red-500 text-[10px]"><i class="fa-solid fa-xmark"></i></button>
+                                <button onclick="deleteSubcategory('${c.id}', '${sub}')" class="text-gray-400 hover:text-red-500 text-[10px]" title="修改或刪除次分類"><i class="fa-solid fa-xmark"></i></button>
                             </span>
                         `).join('')}
                         <button onclick="promptAddSubcategory('${c.id}')" class="text-[10px] text-indigo-600 bg-indigo-50 hover:bg-indigo-100 font-bold px-2 py-0.5 rounded-lg transition">+ 新增次分類</button>
@@ -3096,11 +3096,28 @@
         }
 
         async function deleteSubcategory(catId, subName) {
-            if (!confirm(`確定要刪除次分類「${subName}」嗎？`)) return;
+            const action = confirm(`請問您要對次分類「${subName}」進行什麼操作？\n\n【修改】修改次分類名稱\n【刪除】確認刪除次分類`);
             const cat = categories.find(c => c.id === catId);
             if (!cat || !cat.subcategories) return;
 
-            cat.subcategories = cat.subcategories.filter(s => s !== subName);
+            if (action) {
+                // 修改次分類名稱
+                const newSubName = prompt('請輸入新的次分類名稱：', subName);
+                if (newSubName === null || !newSubName.trim()) return;
+                const cleanNewSub = newSubName.trim();
+                if (cat.subcategories.includes(cleanNewSub)) {
+                    alert('該次分類名稱已經存在！');
+                    return;
+                }
+                const idx = cat.subcategories.indexOf(subName);
+                if (idx !== -1) {
+                    cat.subcategories[idx] = cleanNewSub;
+                }
+            } else {
+                // 確認刪除
+                if (!confirm(`確定要刪除次分類「${subName}」嗎？`)) return;
+                cat.subcategories = cat.subcategories.filter(s => s !== subName);
+            }
 
             if (db) {
                 await window.fbModules.updateDoc(window.fbModules.doc(db, 'categories', catId), {
