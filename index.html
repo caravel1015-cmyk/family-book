@@ -128,15 +128,24 @@
                     <input type="text" id="searchInput" oninput="renderApp()" placeholder="搜尋關鍵字..." class="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
                 </div>
                 <div>
-                    <input type="date" id="dateFilterInput" onchange="renderApp()" class="px-2 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
+                    <!-- 修改為年月搜尋 -->
+                    <input type="month" id="dateFilterInput" onchange="renderApp()" class="px-2 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
                 </div>
                 <button onclick="clearTimelineFilter()" class="text-xs text-gray-500 hover:text-gray-700 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition">清除</button>
             </section>
 
             <section class="space-y-4">
                 <div class="flex justify-between items-center px-1">
-                    <h3 class="font-bold text-gray-800 text-base">家庭動態時軸</h3>
-                    <span class="text-xs text-gray-500">自動按日期關聯</span>
+                    <h3 class="font-bold text-gray-800 text-base flex items-center gap-2">
+                        <span>家庭動態時軸</span>
+                        <!-- 月份切換按鈕區 -->
+                        <div class="flex items-center space-x-1 bg-gray-100 p-0.5 rounded-lg text-xs font-semibold">
+                            <button onclick="changeTimelineMonth(-1)" class="px-2 py-0.5 rounded hover:bg-white text-gray-600 transition" title="上個月"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
+                            <button onclick="resetTimelineMonthToCurrent()" id="currentMonthDisplayBtn" class="px-2 py-0.5 rounded hover:bg-white text-indigo-600 transition font-mono">本月</button>
+                            <button onclick="changeTimelineMonth(1)" class="px-2 py-0.5 rounded hover:bg-white text-gray-600 transition" title="下個月"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                        </div>
+                    </h3>
+                    <span class="text-xs text-gray-500" id="timelineMonthSubtitle">自動按日期關聯</span>
                 </div>
                 <div id="timelineContainer" class="space-y-4"></div>
             </section>
@@ -939,6 +948,11 @@
             initFirebase();
             initFormSelects();
             
+            const now = new Date();
+            const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const dateFilterInput = document.getElementById('dateFilterInput');
+            if (dateFilterInput) dateFilterInput.value = currentYearMonth;
+
             const monthRange = getThisMonthRange();
             document.getElementById('statsStartDate').value = monthRange.start;
             document.getElementById('statsEndDate').value = monthRange.end;
@@ -955,6 +969,32 @@
             history.pushState({ page: 'home', tab: currentTab }, '', '');
             window.addEventListener('popstate', handlePopState);
         };
+
+        function changeTimelineMonth(offset) {
+            const dateFilterInput = document.getElementById('dateFilterInput');
+            if (!dateFilterInput) return;
+            let val = dateFilterInput.value;
+            let d;
+            if (!val) {
+                d = new Date();
+            } else {
+                d = new Date(val + '-01');
+            }
+            d.setMonth(d.getMonth() + offset);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            dateFilterInput.value = `${y}-${m}`;
+            renderApp();
+        }
+
+        function resetTimelineMonthToCurrent() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const dateFilterInput = document.getElementById('dateFilterInput');
+            if (dateFilterInput) dateFilterInput.value = `${y}-${m}`;
+            renderApp();
+        }
 
         function handlePopState(event) {
             if (closeAnyOpenModal()) {
@@ -1488,8 +1528,7 @@
 
         function clearTimelineFilter() {
             document.getElementById('searchInput').value = '';
-            document.getElementById('dateFilterInput').value = '';
-            renderApp();
+            resetTimelineMonthToCurrent();
         }
 
         function canViewItem(item) {
@@ -1610,9 +1649,15 @@
             }
 
             if (dateFilter) {
-                filteredTx = filteredTx.filter(t => t.date === dateFilter);
-                filteredDiaries = filteredDiaries.filter(d => d.date === dateFilter);
+                filteredTx = filteredTx.filter(t => t.date && t.date.startsWith(dateFilter));
+                filteredDiaries = filteredDiaries.filter(d => d.date && d.date.startsWith(dateFilter));
+                const btnDisplay = document.getElementById('currentMonthDisplayBtn');
+                if (btnDisplay) btnDisplay.innerText = dateFilter;
+            } else {
+                const btnDisplay = document.getElementById('currentMonthDisplayBtn');
+                if (btnDisplay) btnDisplay.innerText = '全部月份';
             }
+
             if (keyword) {
                 filteredTx = filteredTx.filter(t => (t.note || '').toLowerCase().includes(keyword) || (t.subcategory || '').toLowerCase().includes(keyword) || String(t.amount).includes(keyword));
                 filteredDiaries = filteredDiaries.filter(d => (d.title || '').toLowerCase().includes(keyword) || (d.content || '').toLowerCase().includes(keyword));
@@ -3096,13 +3141,14 @@
         }
 
         async function deleteSubcategory(catId, subName) {
-            const action = confirm(`請問您要對次分類「${subName}」進行什麼操作？\n\n【修改】修改次分類名稱\n【刪除】確認刪除次分類`);
+            const action = prompt('請點選動作：\n輸入「修改」進入修改次分類名稱畫面\n輸入「刪除」跳出確認是否要刪除\n輸入「取消」或按取消則取消此次動作');
+            if (action === null || action.trim() === '' || action === '取消') return;
+
             const cat = categories.find(c => c.id === catId);
             if (!cat || !cat.subcategories) return;
 
-            if (action) {
-                // 修改次分類名稱
-                const newSubName = prompt('請輸入新的次分類名稱：', subName);
+            if (action === '修改') {
+                const newSubName = prompt('請輸入修改後的次分類名稱：', subName);
                 if (newSubName === null || !newSubName.trim()) return;
                 const cleanNewSub = newSubName.trim();
                 if (cat.subcategories.includes(cleanNewSub)) {
@@ -3113,10 +3159,11 @@
                 if (idx !== -1) {
                     cat.subcategories[idx] = cleanNewSub;
                 }
-            } else {
-                // 確認刪除
-                if (!confirm(`確定要刪除次分類「${subName}」嗎？`)) return;
+            } else if (action === '刪除') {
+                if (!confirm(`是否確認要刪除次分類「${subName}」？`)) return;
                 cat.subcategories = cat.subcategories.filter(s => s !== subName);
+            } else {
+                return;
             }
 
             if (db) {
