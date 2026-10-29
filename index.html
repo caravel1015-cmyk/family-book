@@ -3141,7 +3141,7 @@
         }
 
         async function deleteSubcategory(catId, subName) {
-            const action = prompt('請點選動作：\n輸入「修改」進入修改次分類名稱畫面\n輸入「刪除」跳出確認是否要刪除\n輸入「取消」或按取消則取消此次動作');
+            const action = prompt('請點選動作(修改或刪除不會改變過往記帳分類)：\n輸入「修改」進入修改次分類名稱畫面\n輸入「刪除」跳出確認是否要刪除\n輸入「取消」或按取消則取消此次動作');
             if (action === null || action.trim() === '' || action === '取消') return;
 
             const cat = categories.find(c => c.id === catId);
