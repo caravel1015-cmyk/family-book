@@ -19,7 +19,7 @@
         }
     </script>
     <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-fontawesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDK (v10 Modular via CDN) -->
     <script type="module">
@@ -153,14 +153,16 @@
 
         <!-- 個人專區視圖 -->
         <div id="viewPersonal" class="space-y-6 hidden">
-            <section class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-5 text-white shadow-lg">
-                <div class="flex items-center space-x-3 mb-4">
+            <section class="bg-gradient-to-br from-emerald-500 to-teal-700 rounded-2xl p-5 text-white shadow-lg space-y-4">
+                <div class="flex items-center space-x-3">
                     <span id="personalUserAvatar" class="text-3xl bg-white/20 p-2 rounded-full">👤</span>
                     <div>
                         <h2 id="personalUserName" class="text-lg font-bold">個人儀表板</h2>
                         <p class="text-xs text-emerald-100">專屬私密帳務與日記統計 (不含報帳)</p>
                     </div>
                 </div>
+
+                <!-- 建立者個人紀錄概覽 -->
                 <div class="grid grid-cols-3 gap-2 bg-white/10 p-3 rounded-xl text-center">
                     <div>
                         <p class="text-[10px] text-emerald-100">我的總支出</p>
@@ -175,7 +177,29 @@
                         <p id="personalDiaryCount" class="text-base font-extrabold mt-0.5">0 篇</p>
                     </div>
                 </div>
+
+                <!-- 個人付款統計 (全部 / 公開 / 私密) -->
+                <div class="pt-3 border-t border-white/20">
+                    <p class="text-[11px] font-bold text-emerald-100 mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-credit-card text-xs"></i> 個人付款支出統計
+                    </p>
+                    <div class="grid grid-cols-3 gap-2 bg-white/10 p-2.5 rounded-xl text-center">
+                        <div>
+                            <p class="text-[10px] text-emerald-100">全部付款</p>
+                            <p id="personalPaidTotal" class="text-sm font-extrabold mt-0.5">$0</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-emerald-100">公開付款</p>
+                            <p id="personalPaidPublic" class="text-sm font-extrabold mt-0.5">$0</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-emerald-100">私密付款</p>
+                            <p id="personalPaidPrivate" class="text-sm font-extrabold mt-0.5">$0</p>
+                        </div>
+                    </div>
+                </div>
             </section>
+
             <section class="space-y-4">
                 <div class="flex justify-between items-center px-1">
                     <h3 class="font-bold text-gray-800 text-base">我的專屬紀錄</h3>
@@ -1704,6 +1728,27 @@
             document.getElementById('personalExpense').innerText = `$${myTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
             document.getElementById('personalIncome').innerText = `$${myTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
             document.getElementById('personalDiaryCount').innerText = `${myDiaries.length} 篇`;
+
+            // 計算個人付款 (以目前登入成員為付款人 Payer 的支出)
+            const loggedInMemberId = currentUser.memberId;
+            let paidTxs = transactions.filter(t => canViewItem(t) && t.type === 'expense' && t.tag !== 'reimburse');
+            if (loggedInMemberId) {
+                paidTxs = paidTxs.filter(t => t.payer_id === loggedInMemberId);
+            } else {
+                paidTxs = paidTxs.filter(t => t.userUid === currentUser.uid);
+            }
+
+            if (dateFilter) {
+                paidTxs = paidTxs.filter(t => t.date && t.date.startsWith(dateFilter));
+            }
+
+            const paidTotal = paidTxs.reduce((s, t) => s + Number(t.amount), 0);
+            const paidPublic = paidTxs.filter(t => t.visibility === 'public').reduce((s, t) => s + Number(t.amount), 0);
+            const paidPrivate = paidTxs.filter(t => t.visibility === 'private').reduce((s, t) => s + Number(t.amount), 0);
+
+            document.getElementById('personalPaidTotal').innerText = `$${paidTotal.toLocaleString()}`;
+            document.getElementById('personalPaidPublic').innerText = `$${paidPublic.toLocaleString()}`;
+            document.getElementById('personalPaidPrivate').innerText = `$${paidPrivate.toLocaleString()}`;
 
             const allDates = new Set([...myTxs.map(t => t.date), ...myDiaries.map(d => d.date)]);
             const sortedDates = Array.from(allDates).sort((a, b) => new Date(b) - new Date(a));
