@@ -301,8 +301,10 @@
                     <h3 class="font-bold text-gray-800 text-xs flex items-center gap-1">
                         <i class="fa-solid fa-calendar-alt text-primary"></i> 統計日期區間
                     </h3>
-                    <div class="space-x-1">
+                    <div class="flex items-center space-x-1">
+                        <button onclick="changeStatsMonth(-1)" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold hover:bg-gray-200 transition" title="上個月"><i class="fa-solid fa-chevron-left"></i></button>
                         <button onclick="setStatsDatePreset('thisMonth')" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg font-bold hover:bg-indigo-100 transition">本月</button>
+                        <button onclick="changeStatsMonth(1)" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold hover:bg-gray-200 transition" title="下個月"><i class="fa-solid fa-chevron-right"></i></button>
                         <button onclick="setStatsDatePreset('all')" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold hover:bg-gray-200 transition">全部</button>
                     </div>
                 </div>
@@ -1044,6 +1046,27 @@
             const dateFilterInput = document.getElementById('personalDateFilterInput');
             if (dateFilterInput) dateFilterInput.value = `${y}-${m}`;
             renderApp();
+        }
+
+        function changeStatsMonth(offset) {
+            const startInput = document.getElementById('statsStartDate');
+            const endInput = document.getElementById('statsEndDate');
+            
+            let baseDate = new Date();
+            if (startInput.value) {
+                baseDate = new Date(startInput.value);
+            }
+            
+            baseDate.setMonth(baseDate.getMonth() + offset);
+            
+            const year = baseDate.getFullYear();
+            const month = String(baseDate.getMonth() + 1).padStart(2, '0');
+            const lastDay = new Date(year, baseDate.getMonth() + 1, 0).getDate();
+            
+            startInput.value = `${year}-${month}-01`;
+            endInput.value = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
+            
+            renderStatsView();
         }
 
         function handlePopState(event) {
