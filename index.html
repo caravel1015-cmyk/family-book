@@ -93,21 +93,29 @@
 
         <!-- 家庭時軸視圖 -->
         <div id="viewTimeline" class="space-y-6">
-            <section class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
-                <div class="flex justify-between items-start">
+            <!-- 改為三欄式支出總覽儀表板卡片 -->
+            <section class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg space-y-4">
+                <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-xs text-indigo-100 uppercase tracking-wider font-semibold">支出統計 (不含報帳)</p>
-                        <h2 id="totalExpenseDisplay" class="text-3xl font-extrabold mt-1">$0</h2>
+                        <p class="text-xs text-indigo-100 uppercase tracking-wider font-semibold">家庭支出儀表板 (不含報帳)</p>
+                        <h2 class="text-lg font-bold mt-0.5">即時統計總覽</h2>
                     </div>
-                    <div class="text-right">
-                        <span id="recordCountDisplay" class="text-xs bg-white/20 px-2.5 py-1 rounded-full font-medium">共 0 筆</span>
-                    </div>
+                    <span id="recordCountDisplay" class="text-xs bg-white/20 px-2.5 py-1 rounded-full font-medium">共 0 筆</span>
                 </div>
 
-                <div class="grid grid-cols-3 gap-1.5 mt-5 bg-white/10 p-1 rounded-xl text-xs font-medium">
-                    <button onclick="setExpenseFilter('all')" id="filterBtn-all" class="py-1.5 rounded-lg bg-white text-indigo-700 shadow-sm transition">全部支出</button>
-                    <button onclick="setExpenseFilter('public')" id="filterBtn-public" class="py-1.5 rounded-lg text-white hover:bg-white/10 transition">公開支出</button>
-                    <button onclick="setExpenseFilter('private')" id="filterBtn-private" class="py-1.5 rounded-lg text-white hover:bg-white/10 transition">個人私密</button>
+                <div class="grid grid-cols-3 gap-2 bg-white/15 p-3 rounded-xl text-center">
+                    <div>
+                        <p class="text-[10px] text-indigo-100 font-medium">全部支出</p>
+                        <p id="timelineAllExpense" class="text-sm font-extrabold mt-0.5">$0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-indigo-100 font-medium">公開支出</p>
+                        <p id="timelinePublicExpense" class="text-sm font-extrabold mt-0.5">$0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-indigo-100 font-medium">私密支出</p>
+                        <p id="timelinePrivateExpense" class="text-sm font-extrabold mt-0.5">$0</p>
+                    </div>
                 </div>
             </section>
 
@@ -128,7 +136,7 @@
                     <input type="text" id="searchInput" oninput="renderApp()" placeholder="搜尋關鍵字..." class="w-full pl-8 pr-3 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
                 </div>
                 <div>
-                    <!-- 修改為年月搜尋 -->
+                    <!-- 年月搜尋 -->
                     <input type="month" id="dateFilterInput" onchange="renderApp()" class="px-2 py-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none">
                 </div>
                 <button onclick="clearTimelineFilter()" class="text-xs text-gray-500 hover:text-gray-700 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium transition">清除</button>
@@ -163,21 +171,44 @@
                 </div>
                 <div class="grid grid-cols-3 gap-2 bg-white/10 p-3 rounded-xl text-center">
                     <div>
-                        <p class="text-[10px] text-emerald-100">我的總支出</p>
-                        <p id="personalExpense" class="text-base font-extrabold mt-0.5">$0</p>
+                        <p class="text-[10px] text-emerald-100">總支出 (全部)</p>
+                        <p id="personalExpense" class="text-sm font-extrabold mt-0.5">$0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-emerald-100">公開支出</p>
+                        <p id="personalPublicExpense" class="text-sm font-extrabold mt-0.5">$0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-emerald-100">私密支出</p>
+                        <p id="personalPrivateExpense" class="text-sm font-extrabold mt-0.5">$0</p>
                     </div>
                     <div>
                         <p class="text-[10px] text-emerald-100">我的總收入</p>
-                        <p id="personalIncome" class="text-base font-extrabold mt-0.5 text-yellow-300">$0</p>
+                        <p id="personalIncome" class="text-sm font-extrabold mt-0.5 text-yellow-300">$0</p>
                     </div>
-                    <div>
+                    <div class="col-span-2">
                         <p class="text-[10px] text-emerald-100">日記篇數</p>
-                        <p id="personalDiaryCount" class="text-base font-extrabold mt-0.5">0 篇</p>
+                        <p id="personalDiaryCount" class="text-sm font-extrabold mt-0.5">0 篇</p>
                     </div>
                 </div>
             </section>
+
+            <!-- 隱藏的個人專區月份過濾 input -->
+            <input type="month" id="personalDateFilterInput" onchange="renderApp()" class="hidden">
+
             <section class="space-y-4">
-                <h3 class="font-bold text-gray-800 text-base px-1">我的專屬紀錄</h3>
+                <div class="flex justify-between items-center px-1">
+                    <h3 class="font-bold text-gray-800 text-base flex items-center gap-2">
+                        <span>我的專屬紀錄</span>
+                        <!-- 個人專區月份切換按鈕區 -->
+                        <div class="flex items-center space-x-1 bg-gray-100 p-0.5 rounded-lg text-xs font-semibold">
+                            <button onclick="changePersonalMonth(-1)" class="px-2 py-0.5 rounded hover:bg-white text-gray-600 transition" title="上個月"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
+                            <button onclick="resetPersonalMonthToCurrent()" id="personalMonthDisplayBtn" class="px-2 py-0.5 rounded hover:bg-white text-emerald-600 transition font-mono">本月</button>
+                            <button onclick="changePersonalMonth(1)" class="px-2 py-0.5 rounded hover:bg-white text-gray-600 transition" title="下個月"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                        </div>
+                    </h3>
+                    <span class="text-xs text-gray-500" id="personalMonthSubtitle">自動按日期關聯</span>
+                </div>
                 <div id="personalTimelineContainer" class="space-y-4"></div>
             </section>
         </div>
@@ -208,7 +239,6 @@
                     <div class="flex justify-between items-center px-1">
                         <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-repeat text-indigo-600 mr-1"></i> 定期循環記帳清單</h3>
                         <div class="flex items-center space-x-2">
-                            <!-- 排序切換按鈕 -->
                             <div class="bg-gray-200 p-0.5 rounded-lg flex text-[11px] font-bold">
                                 <button id="sortBtnRecTx-date" onclick="setSubTabSortMode('recTx', 'date')" class="px-2 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition">📅 日期</button>
                                 <button id="sortBtnRecTx-custom" onclick="setSubTabSortMode('recTx', 'custom')" class="px-2 py-1 rounded-md text-gray-600 transition">🖐️ 自訂</button>
@@ -226,7 +256,6 @@
                     <div class="flex justify-between items-center px-1">
                         <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-calendar-days text-amber-600 mr-1"></i> 週期性家庭事件</h3>
                         <div class="flex items-center space-x-2">
-                            <!-- 排序切換按鈕 -->
                             <div class="bg-gray-200 p-0.5 rounded-lg flex text-[11px] font-bold">
                                 <button id="sortBtnRecEvent-date" onclick="setSubTabSortMode('recEvent', 'date')" class="px-2 py-1 rounded-md bg-white text-amber-600 shadow-xs transition">📅 日期</button>
                                 <button id="sortBtnRecEvent-custom" onclick="setSubTabSortMode('recEvent', 'custom')" class="px-2 py-1 rounded-md text-gray-600 transition">🖐️ 自訂</button>
@@ -244,7 +273,6 @@
                     <div class="flex justify-between items-center px-1">
                         <h3 class="font-bold text-gray-800 text-sm"><i class="fa-solid fa-bell text-emerald-600 mr-1"></i> 近期與單次事件提醒</h3>
                         <div class="flex items-center space-x-2">
-                            <!-- 排序切換按鈕 -->
                             <div class="bg-gray-200 p-0.5 rounded-lg flex text-[11px] font-bold">
                                 <button id="sortBtnReminder-date" onclick="setSubTabSortMode('reminder', 'date')" class="px-2 py-1 rounded-md bg-white text-emerald-600 shadow-xs transition">📅 日期</button>
                                 <button id="sortBtnReminder-custom" onclick="setSubTabSortMode('reminder', 'custom')" class="px-2 py-1 rounded-md text-gray-600 transition">🖐️ 自訂</button>
@@ -261,7 +289,6 @@
 
         <!-- 統計分析視圖 -->
         <div id="viewStats" class="space-y-6 hidden">
-            <!-- 篩選條件按鈕 (全部、公開、付款人、個人) -->
             <section class="grid grid-cols-4 gap-1 bg-gray-200 p-1 rounded-xl text-[11px] font-bold">
                 <button id="statsScopeAll" onclick="setStatsScope('all')" class="py-2 rounded-lg bg-white shadow-sm text-indigo-600 transition">📋 全部</button>
                 <button id="statsScopePublic" onclick="setStatsScope('public')" class="py-2 rounded-lg text-gray-600 hover:text-gray-900 transition">🌐 公開</button>
@@ -311,7 +338,7 @@
                 <div id="categoryStatsContainer" class="space-y-3"></div>
             </section>
 
-            <!-- 趨勢圖控制列：檢視頻率與自訂區間 -->
+            <!-- 趨勢圖控制列 -->
             <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-gray-800 text-xs flex items-center gap-1.5">
@@ -337,7 +364,7 @@
                 </div>
             </section>
 
-            <!-- 2. 每月/每年收支趨勢折線圖 -->
+            <!-- 2. 收支趨勢折線圖 -->
             <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 id="lineChartTitle" class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
@@ -377,7 +404,7 @@
                 </div>
             </section>
 
-            <!-- 3. 自選分類每月/每年趨勢長條圖 -->
+            <!-- 3. 自選分類趨勢長條圖 -->
             <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 id="barChartTitle" class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
@@ -592,7 +619,6 @@
                     </div>
                 </div>
 
-                <!-- 自訂週期設定 -->
                 <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 space-y-3">
                     <h4 class="font-bold text-xs text-gray-700"><i class="fa-solid fa-calendar-days text-indigo-600 mr-1"></i> 自訂週期與重複規則</h4>
                     <div class="grid grid-cols-3 gap-2 items-center">
@@ -614,7 +640,6 @@
                         </div>
                     </div>
 
-                    <!-- 結束時間設定 -->
                     <div class="pt-2 border-t border-gray-200 space-y-2">
                         <label class="block text-[10px] font-semibold text-gray-500">結束時間</label>
                         <div class="space-y-1.5 text-xs">
@@ -668,7 +693,6 @@
                     <input type="text" id="recEventTitle" required placeholder="例如：例行家庭大掃除" class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:outline-none">
                 </div>
 
-                <!-- 自訂週期設定 -->
                 <div class="bg-gray-50 p-3 rounded-2xl border border-gray-200 space-y-3">
                     <h4 class="font-bold text-xs text-gray-700"><i class="fa-solid fa-calendar-days text-amber-600 mr-1"></i> 自訂週期與重複規則</h4>
                     <div class="grid grid-cols-3 gap-2 items-center">
@@ -689,7 +713,6 @@
                         </div>
                     </div>
 
-                    <!-- 結束時間設定 -->
                     <div class="pt-2 border-t border-gray-200 space-y-2">
                         <label class="block text-[10px] font-semibold text-gray-500">結束時間</label>
                         <div class="space-y-1.5 text-xs">
@@ -887,7 +910,6 @@
             { id: 'rm1', title: '繳納信用卡費', date: getTodayStr(), time: '20:00', note: '金額約 $5,400', completed: false, visibility: 'public', userUid: 'demo1', order: 0 }
         ];
 
-        // 各分頁排序偏好記錄 (預設 date)
         let recurringSortModes = JSON.parse(localStorage.getItem('family_recurring_sort_modes')) || {
             recTx: 'date',
             recEvent: 'date',
@@ -897,7 +919,6 @@
         let currentUser = null;
         let currentTab = 'timeline';
         let currentRecurringSubTab = 'recTx';
-        let currentExpenseFilter = 'all';
         let currentTxType = 'expense';
         let currentRecTxType = 'expense';
         let currentStatsScope = 'all';
@@ -953,6 +974,9 @@
             const dateFilterInput = document.getElementById('dateFilterInput');
             if (dateFilterInput) dateFilterInput.value = currentYearMonth;
 
+            const personalDateFilterInput = document.getElementById('personalDateFilterInput');
+            if (personalDateFilterInput) personalDateFilterInput.value = currentYearMonth;
+
             const monthRange = getThisMonthRange();
             document.getElementById('statsStartDate').value = monthRange.start;
             document.getElementById('statsEndDate').value = monthRange.end;
@@ -992,6 +1016,32 @@
             const y = now.getFullYear();
             const m = String(now.getMonth() + 1).padStart(2, '0');
             const dateFilterInput = document.getElementById('dateFilterInput');
+            if (dateFilterInput) dateFilterInput.value = `${y}-${m}`;
+            renderApp();
+        }
+
+        function changePersonalMonth(offset) {
+            const dateFilterInput = document.getElementById('personalDateFilterInput');
+            if (!dateFilterInput) return;
+            let val = dateFilterInput.value;
+            let d;
+            if (!val) {
+                d = new Date();
+            } else {
+                d = new Date(val + '-01');
+            }
+            d.setMonth(d.getMonth() + offset);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            dateFilterInput.value = `${y}-${m}`;
+            renderApp();
+        }
+
+        function resetPersonalMonthToCurrent() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const dateFilterInput = document.getElementById('personalDateFilterInput');
             if (dateFilterInput) dateFilterInput.value = `${y}-${m}`;
             renderApp();
         }
@@ -1111,11 +1161,9 @@
                     window.fbModules.onAuthStateChanged(auth, async (user) => {
                         if (user) {
                             const userEmail = (user.email || '').toLowerCase().trim();
-                            const allowedMembersWithEmail = members.filter(m => m.email && m.email.trim());
-
                             let matchedMember = members.find(m => m.email && m.email.toLowerCase().trim() === userEmail);
 
-                            if (!matchedMember && allowedMembersWithEmail.length === 0) {
+                            if (!matchedMember && members.filter(m => m.email && m.email.trim()).length === 0) {
                                 matchedMember = members.find(m => user.displayName && m.name.includes(user.displayName));
                                 if (!matchedMember) matchedMember = { name: user.displayName || '家庭成員', avatar: '👤', id: '' };
                             } else if (!matchedMember) {
@@ -1192,7 +1240,7 @@
                     }
                 }
             } catch (e) {
-                console.warn("自動初始化雲端預設分類與成員失敗或無權限：", e);
+                console.warn("自動初始化雲端預設失敗：", e);
             }
         }
 
@@ -1275,14 +1323,12 @@
             }
         }
 
-        // 切換子面板的排序模式 (date / custom)
         function setSubTabSortMode(subTabKey, mode) {
             recurringSortModes[subTabKey] = mode;
             saveDataLocallyOnly();
             renderRecurringView();
         }
 
-        // 上下移動自訂順序
         async function moveRecurringItem(subTabKey, itemId, direction) {
             let listRef;
             let colName;
@@ -1311,7 +1357,7 @@
                     });
                     await Promise.all(updatePromises);
                 } catch (e) {
-                    console.error("同步自訂順序至雲端失敗：", e);
+                    console.error("同步排序失敗：", e);
                 }
             }
 
@@ -1478,14 +1524,6 @@
             }
         }
 
-        function setExpenseFilter(filter) {
-            currentExpenseFilter = filter;
-            ['all', 'public', 'private'].forEach(f => {
-                document.getElementById(`filterBtn-${f}`).className = f === filter ? "py-1.5 rounded-lg bg-white text-indigo-700 shadow-sm transition" : "py-1.5 rounded-lg text-white hover:bg-white/10 transition";
-            });
-            renderApp();
-        }
-
         function setStatsScope(scope) {
             currentStatsScope = scope;
             const btnAll = document.getElementById('statsScopeAll');
@@ -1640,14 +1678,6 @@
             let filteredTx = transactions.filter(t => canViewItem(t));
             let filteredDiaries = diaries.filter(d => canViewItem(d));
 
-            if (currentExpenseFilter === 'public') {
-                filteredTx = filteredTx.filter(t => t.visibility === 'public');
-                filteredDiaries = filteredDiaries.filter(d => d.visibility === 'public');
-            } else if (currentExpenseFilter === 'private') {
-                filteredTx = filteredTx.filter(t => t.visibility === 'private');
-                filteredDiaries = filteredDiaries.filter(d => d.visibility === 'private');
-            }
-
             if (dateFilter) {
                 filteredTx = filteredTx.filter(t => t.date && t.date.startsWith(dateFilter));
                 filteredDiaries = filteredDiaries.filter(d => d.date && d.date.startsWith(dateFilter));
@@ -1663,8 +1693,15 @@
                 filteredDiaries = filteredDiaries.filter(d => (d.title || '').toLowerCase().includes(keyword) || (d.content || '').toLowerCase().includes(keyword));
             }
 
-            const totalExpense = filteredTx.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((sum, t) => sum + Number(t.amount), 0);
-            document.getElementById('totalExpenseDisplay').innerText = `$${totalExpense.toLocaleString()}`;
+            // 計算全部、公開、私密的支出統計數字
+            const expTxs = filteredTx.filter(t => t.type === 'expense' && t.tag !== 'reimburse');
+            const allExpense = expTxs.reduce((sum, t) => sum + Number(t.amount), 0);
+            const publicExpense = expTxs.filter(t => t.visibility === 'public').reduce((sum, t) => sum + Number(t.amount), 0);
+            const privateExpense = expTxs.filter(t => t.visibility === 'private').reduce((sum, t) => sum + Number(t.amount), 0);
+
+            document.getElementById('timelineAllExpense').innerText = `$${allExpense.toLocaleString()}`;
+            document.getElementById('timelinePublicExpense').innerText = `$${publicExpense.toLocaleString()}`;
+            document.getElementById('timelinePrivateExpense').innerText = `$${privateExpense.toLocaleString()}`;
             document.getElementById('recordCountDisplay').innerText = `共 ${filteredTx.length + filteredDiaries.length} 筆`;
 
             const allDates = new Set([...filteredTx.map(t => t.date), ...filteredDiaries.map(d => d.date)]);
@@ -1680,23 +1717,40 @@
                 return;
             }
             document.getElementById('personalUserName').innerText = `${currentUser.name} 的個人儀表板`;
-            const myTxs = transactions.filter(t => t.userUid === currentUser.uid);
-            const myDiaries = diaries.filter(d => d.userUid === currentUser.uid);
+
+            const dateFilter = document.getElementById('personalDateFilterInput') ? document.getElementById('personalDateFilterInput').value : '';
+            const btnDisplay = document.getElementById('personalMonthDisplayBtn');
+            if (btnDisplay) btnDisplay.innerText = dateFilter || '全部月份';
+
+            let myTxs = transactions.filter(t => t.userUid === currentUser.uid);
+            let myDiaries = diaries.filter(d => d.userUid === currentUser.uid);
+
+            if (dateFilter) {
+                myTxs = myTxs.filter(t => t.date && t.date.startsWith(dateFilter));
+                myDiaries = myDiaries.filter(d => d.date && d.date.startsWith(dateFilter));
+            }
             
-            document.getElementById('personalExpense').innerText = `$${myTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
-            document.getElementById('personalIncome').innerText = `$${myTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0).toLocaleString()}`;
+            const expTxs = myTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse');
+            const totalExp = expTxs.reduce((s, t) => s + Number(t.amount), 0);
+            const publicExp = expTxs.filter(t => t.visibility === 'public').reduce((s, t) => s + Number(t.amount), 0);
+            const privateExp = expTxs.filter(t => t.visibility === 'private').reduce((s, t) => s + Number(t.amount), 0);
+            const totalInc = myTxs.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+
+            document.getElementById('personalExpense').innerText = `$${totalExp.toLocaleString()}`;
+            document.getElementById('personalPublicExpense').innerText = `$${publicExp.toLocaleString()}`;
+            document.getElementById('personalPrivateExpense').innerText = `$${privateExp.toLocaleString()}`;
+            document.getElementById('personalIncome').innerText = `$${totalInc.toLocaleString()}`;
             document.getElementById('personalDiaryCount').innerText = `${myDiaries.length} 篇`;
 
             const allDates = new Set([...myTxs.map(t => t.date), ...myDiaries.map(d => d.date)]);
             const sortedDates = Array.from(allDates).sort((a, b) => new Date(b) - new Date(a));
-            document.getElementById('personalTimelineContainer').innerHTML = sortedDates.length === 0 ? `<div class="text-center py-10 text-gray-400 text-sm">您目前還沒有建立個人紀錄</div>` : sortedDates.map(date => renderDayBlock(date, myTxs, myDiaries)).join('');
+            document.getElementById('personalTimelineContainer').innerHTML = sortedDates.length === 0 ? `<div class="text-center py-10 text-gray-400 text-sm">您在此月份內尚無建立個人紀錄</div>` : sortedDates.map(date => renderDayBlock(date, myTxs, myDiaries)).join('');
         }
 
         function renderRecurringView() {
             const unitMap = { daily: '天', weekly: '週', monthly: '個月', yearly: '年' };
             const today = getTodayStr();
 
-            // 1. 循環記帳渲染與排序設定
             const recTxSortMode = recurringSortModes.recTx || 'date';
             const btnRecTxDate = document.getElementById('sortBtnRecTx-date');
             const btnRecTxCustom = document.getElementById('sortBtnRecTx-custom');
@@ -1772,7 +1826,6 @@
                 }).join('');
             }
 
-            // 2. 循環事件渲染與排序設定
             const recEventSortMode = recurringSortModes.recEvent || 'date';
             const btnRecEventDate = document.getElementById('sortBtnRecEvent-date');
             const btnRecEventCustom = document.getElementById('sortBtnRecEvent-custom');
@@ -1840,7 +1893,6 @@
                 }).join('');
             }
 
-            // 3. 事件提醒渲染與排序設定
             const reminderSortMode = recurringSortModes.reminder || 'date';
             const btnReminderDate = document.getElementById('sortBtnReminder-date');
             const btnReminderCustom = document.getElementById('sortBtnReminder-custom');
@@ -2895,7 +2947,7 @@
                         ${(c.subcategories || []).map(sub => `
                             <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-lg text-[11px] flex items-center gap-1">
                                 ${sub}
-                                <button onclick="deleteSubcategory('${c.id}', '${sub}')" class="text-gray-400 hover:text-red-500 text-[10px]" title="修改或刪除次分類"><i class="fa-solid fa-xmark"></i></button>
+                                <button onclick="deleteSubcategory('${c.id}', '${sub}')" class="text-gray-400 hover:text-red-500 text-[10px]" title="刪除次分類"><i class="fa-solid fa-xmark"></i></button>
                             </span>
                         `).join('')}
                         <button onclick="promptAddSubcategory('${c.id}')" class="text-[10px] text-indigo-600 bg-indigo-50 hover:bg-indigo-100 font-bold px-2 py-0.5 rounded-lg transition">+ 新增次分類</button>
@@ -2999,7 +3051,7 @@
                     });
                     await Promise.all(updatePromises);
                 } catch (error) {
-                    console.error("同步成員順序至雲端失敗：", error);
+                    console.error("同步失敗：", error);
                 }
             }
 
@@ -3089,7 +3141,7 @@
                     });
                     await Promise.all(updatePromises);
                 } catch (error) {
-                    console.error("同步分類順序至雲端失敗：", error);
+                    console.error("同步失敗：", error);
                 }
             }
 
@@ -3141,7 +3193,7 @@
         }
 
         async function deleteSubcategory(catId, subName) {
-            const action = prompt('請點選動作(修改或刪除不會改變過往記帳分類)：\n輸入「修改」進入修改次分類名稱畫面\n輸入「刪除」跳出確認是否要刪除\n輸入「取消」或按取消則取消此次動作');
+            const action = prompt('請點選動作：\n輸入「修改」修改次分類名稱\n輸入「刪除」刪除此次分類\n輸入「取消」或按取消');
             if (action === null || action.trim() === '' || action === '取消') return;
 
             const cat = categories.find(c => c.id === catId);
@@ -3218,7 +3270,7 @@
                 recurringTransactions,
                 recurringEvents,
                 reminders,
-                version: '1.4',
+                version: '1.5',
                 exportAt: new Date().toISOString()
             };
 
