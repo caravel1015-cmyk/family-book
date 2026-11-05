@@ -301,10 +301,8 @@
                     <h3 class="font-bold text-gray-800 text-xs flex items-center gap-1">
                         <i class="fa-solid fa-calendar-alt text-primary"></i> 統計日期區間
                     </h3>
-                    <div class="flex items-center space-x-1">
-                        <button onclick="changeStatsMonth(-1)" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold hover:bg-gray-200 transition" title="上個月"><i class="fa-solid fa-chevron-left"></i></button>
+                    <div class="space-x-1">
                         <button onclick="setStatsDatePreset('thisMonth')" class="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1 rounded-lg font-bold hover:bg-indigo-100 transition">本月</button>
-                        <button onclick="changeStatsMonth(1)" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold hover:bg-gray-200 transition" title="下個月"><i class="fa-solid fa-chevron-right"></i></button>
                         <button onclick="setStatsDatePreset('all')" class="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-lg font-bold hover:bg-gray-200 transition">全部</button>
                     </div>
                 </div>
@@ -1048,27 +1046,6 @@
             renderApp();
         }
 
-        function changeStatsMonth(offset) {
-            const startInput = document.getElementById('statsStartDate');
-            const endInput = document.getElementById('statsEndDate');
-            
-            let baseDate = new Date();
-            if (startInput.value) {
-                baseDate = new Date(startInput.value);
-            }
-            
-            baseDate.setMonth(baseDate.getMonth() + offset);
-            
-            const year = baseDate.getFullYear();
-            const month = String(baseDate.getMonth() + 1).padStart(2, '0');
-            const lastDay = new Date(year, baseDate.getMonth() + 1, 0).getDate();
-            
-            startInput.value = `${year}-${month}-01`;
-            endInput.value = `${year}-${month}-${String(lastDay).padStart(2, '0')}`;
-            
-            renderStatsView();
-        }
-
         function handlePopState(event) {
             if (closeAnyOpenModal()) {
                 history.pushState({ page: 'home', tab: currentTab }, '', '');
@@ -1314,7 +1291,6 @@
                 recurringTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 recurringTransactions.sort((a, b) => (a.order || 0) - (b.order || 0));
                 
-                // 初次載入雲端資料時，觸發每日自動背景靜默檢查
                 checkDailyAutoRecurringOnLoad();
                 renderApp();
             });
@@ -1332,15 +1308,12 @@
             });
         }
 
-        // ==========================================
-        // 每天首次開啟自動背景靜默檢查並產生到期循環記帳
-        // ==========================================
         async function checkDailyAutoRecurringOnLoad() {
             const today = getTodayStr();
             const lastCheckedDate = localStorage.getItem('family_last_auto_check_date');
 
             if (lastCheckedDate === today) {
-                return; // 今天已經檢查過了，不重複執行
+                return;
             }
 
             let generatedCount = 0;
@@ -1351,7 +1324,6 @@
                 }
             }
 
-            // 記錄今天已經檢查過
             localStorage.setItem('family_last_auto_check_date', today);
             
             if (generatedCount > 0) {
@@ -1746,7 +1718,6 @@
                 filteredDiaries = filteredDiaries.filter(d => (d.title || '').toLowerCase().includes(keyword) || (d.content || '').toLowerCase().includes(keyword));
             }
 
-            // 計算全部、公開、私密的支出統計數字
             const expTxs = filteredTx.filter(t => t.type === 'expense' && t.tag !== 'reimburse');
             const allExpense = expTxs.reduce((sum, t) => sum + Number(t.amount), 0);
             const publicExpense = expTxs.filter(t => t.visibility === 'public').reduce((sum, t) => sum + Number(t.amount), 0);
@@ -2213,7 +2184,20 @@
                 }).join('');
             }
 
-            renderTrendCharts(statsTxs);
+            // 趨勢圖使用全局的檢視範圍授權交易資料（不受上方統計日期區間限制，改由趨勢設定控制）
+            let trendScopeTxs = transactions;
+            if (currentStatsScope === 'public') {
+                trendScopeTxs = trendScopeTxs.filter(t => t.visibility === 'public');
+            } else if (currentStatsScope === 'payer') {
+                const loggedInMemberId = currentUser ? currentUser.memberId : null;
+                trendScopeTxs = trendScopeTxs.filter(t => loggedInMemberId && t.payer_id === loggedInMemberId);
+            } else if (currentStatsScope === 'personal') {
+                trendScopeTxs = trendScopeTxs.filter(t => currentUser && t.userUid === currentUser.uid && t.visibility === 'private');
+            } else {
+                trendScopeTxs = trendScopeTxs.filter(t => canViewItem(t));
+            }
+
+            renderTrendCharts(trendScopeTxs);
         }
 
         function openCategoryDetailModal(catId) {
@@ -3376,3 +3360,4 @@
     </script>
 </body>
 </html>
+```[cite: 1]
