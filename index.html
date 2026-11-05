@@ -1290,6 +1290,9 @@
             window.fbModules.onSnapshot(window.fbModules.collection(db, 'recurringTransactions'), (snap) => {
                 recurringTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 recurringTransactions.sort((a, b) => (a.order || 0) - (b.order || 0));
+                
+                // 初次載入雲端資料時，觸發每日自動背景靜默檢查
+                checkDailyAutoRecurringOnLoad();
                 renderApp();
             });
 
@@ -1304,6 +1307,33 @@
                 reminders.sort((a, b) => (a.order || 0) - (b.order || 0));
                 renderApp();
             });
+        }
+
+        // ==========================================
+        // 每天首次開啟自動背景靜默檢查並產生到期循環記帳
+        // ==========================================
+        async function checkDailyAutoRecurringOnLoad() {
+            const today = getTodayStr();
+            const lastCheckedDate = localStorage.getItem('family_last_auto_check_date');
+
+            if (lastCheckedDate === today) {
+                return; // 今天已經檢查過了，不重複執行
+            }
+
+            let generatedCount = 0;
+            for (let rt of recurringTransactions) {
+                if (rt.nextDate <= today && !isRecurringExpired(rt) && canViewItem(rt)) {
+                    await executeSingleRecurringTx(rt.id, false);
+                    generatedCount++;
+                }
+            }
+
+            // 記錄今天已經檢查過
+            localStorage.setItem('family_last_auto_check_date', today);
+            
+            if (generatedCount > 0) {
+                console.log(`[自動背景檢查] 偵測到 ${generatedCount} 筆到期循環記帳，已自動生成。`);
+            }
         }
 
         function saveDataLocallyOnly() {
