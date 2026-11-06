@@ -366,52 +366,13 @@
                 </div>
             </section>
 
-            <!-- 2. 收支趨勢折線圖 -->
-            <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
-                <div class="flex justify-between items-center">
-                    <h3 id="lineChartTitle" class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
-                        <i class="fa-solid fa-chart-line text-rose-500"></i> 每月收支趨勢
-                    </h3>
-                    <span id="trendRangeLabel" class="text-xs text-gray-400 font-medium">自訂區間</span>
-                </div>
-
-                <div class="relative h-48 w-full border-b border-l border-gray-200 pt-2 pb-1">
-                    <div class="absolute inset-0 grid grid-rows-4 pointer-events-none">
-                        <div class="border-b border-gray-100 w-full"></div>
-                        <div class="border-b border-gray-100 w-full"></div>
-                        <div class="border-b border-gray-100 w-full"></div>
-                        <div></div>
-                    </div>
-                    <div class="absolute -left-7 top-0 bottom-0 flex flex-col justify-between text-[10px] text-gray-400 font-mono text-right pr-1">
-                        <span id="lineChartY3">1,600</span>
-                        <span id="lineChartY2">1,200</span>
-                        <span id="lineChartY1">800</span>
-                        <span id="lineChartY0.5">400</span>
-                        <span>0</span>
-                    </div>
-                    <svg id="incomeExpenseLineSvg" class="absolute inset-0 w-full h-full overflow-visible" preserveAspectRatio="none"></svg>
-                </div>
-
-                <div id="lineChartXLabels" class="grid text-[10px] text-gray-500 text-center pt-1 font-mono overflow-x-auto"></div>
-
-                <div class="flex justify-center items-center space-x-6 pt-2 text-xs">
-                    <div class="flex items-center space-x-1.5">
-                        <span class="w-4 h-1.5 bg-rose-500 rounded-full inline-block border border-rose-600"></span>
-                        <span class="text-gray-600 font-medium">支出 ($)</span>
-                    </div>
-                    <div class="flex items-center space-x-1.5">
-                        <span class="w-4 h-1.5 bg-emerald-500 rounded-full inline-block border border-emerald-600"></span>
-                        <span class="text-gray-600 font-medium">收入 ($)</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 3. 自選分類趨勢長條圖 -->
+            <!-- 2. 自選分類趨勢長條圖 -->
             <section class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
                 <div class="flex justify-between items-center">
                     <h3 id="barChartTitle" class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
                         <i class="fa-solid fa-chart-column text-amber-500"></i> 自選分類每月趨勢
                     </h3>
+                    <span id="trendRangeLabel" class="text-xs text-gray-400 font-medium">自訂區間</span>
                 </div>
 
                 <div>
@@ -1145,7 +1106,6 @@
                 endYearSelect.classList.add('hidden');
                 startLabel.innerText = "起始月份";
                 endLabel.innerText = "結束月份";
-                document.getElementById('lineChartTitle').innerHTML = `<i class="fa-solid fa-chart-line text-rose-500"></i> 每月收支趨勢`;
                 document.getElementById('barChartTitle').innerHTML = `<i class="fa-solid fa-chart-column text-amber-500"></i> 自選分類每月趨勢`;
             } else {
                 btnYearly.className = "px-3 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition";
@@ -1156,7 +1116,6 @@
                 endYearSelect.classList.remove('hidden');
                 startLabel.innerText = "起始年份";
                 endLabel.innerText = "結束年份";
-                document.getElementById('lineChartTitle').innerHTML = `<i class="fa-solid fa-chart-line text-rose-500"></i> 每年收支趨勢`;
                 document.getElementById('barChartTitle').innerHTML = `<i class="fa-solid fa-chart-column text-amber-500"></i> 自選分類每年趨勢`;
             }
             renderStatsView();
@@ -1485,7 +1444,7 @@
             if (!select) return;
 
             const currentVal = select.value;
-            let options = '';
+            let options = `<option value="all_expense">💰 總支出 (全部支出分類)</option>`;
 
             categories.forEach(c => {
                 options += `<option value="cat:${c.id}">${c.icon} ${c.name} (主分類)</option>`;
@@ -2321,59 +2280,15 @@
 
             document.getElementById('trendRangeLabel').innerText = `${periods[0]} ~ ${periods[periods.length - 1]}`;
 
-            const expenseData = periods.map(p => {
-                const matched = scopeTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(p));
-                return matched.reduce((s, t) => s + Number(t.amount), 0);
-            });
-
-            const incomeData = periods.map(p => {
-                const matched = scopeTxs.filter(t => t.type === 'income' && t.date.startsWith(p));
-                return matched.reduce((s, t) => s + Number(t.amount), 0);
-            });
-
-            const maxVal = Math.max(...expenseData, ...incomeData, 100);
-            const gridMax = Math.ceil(maxVal / 400) * 400 || 400;
-
-            document.getElementById('lineChartY3').innerText = gridMax.toLocaleString();
-            document.getElementById('lineChartY2').innerText = Math.round(gridMax * 0.75).toLocaleString();
-            document.getElementById('lineChartY1').innerText = Math.round(gridMax * 0.5).toLocaleString();
-            document.getElementById('lineChartY0.5').innerText = Math.round(gridMax * 0.25).toLocaleString();
-
-            const svg = document.getElementById('incomeExpenseLineSvg');
-            const n = periods.length;
-
-            let expPoints = [];
-            let incPoints = [];
-            let expCircles = [];
-            let incCircles = [];
-
-            for (let i = 0; i < n; i++) {
-                const x = n > 1 ? (i / (n - 1)) * 100 : 50;
-                
-                const yExp = 100 - (expenseData[i] / gridMax) * 100;
-                expPoints.push(`${x},${yExp}`);
-                expCircles.push(`<circle cx="${x}%" cy="${yExp}%" r="3.5" fill="#EF4444" />`);
-                
-                const yInc = 100 - (incomeData[i] / gridMax) * 100;
-                incPoints.push(`${x},${yInc}`);
-                incCircles.push(`<circle cx="${x}%" cy="${yInc}%" r="3.5" fill="#10B981" />`);
-            }
-
-            svg.innerHTML = `
-                ${expPoints.length > 0 ? `<polyline fill="none" stroke="#EF4444" stroke-width="2.5" points="${expPoints.join(' ')}" />` : ''}
-                ${incPoints.length > 0 ? `<polyline fill="none" stroke="#10B981" stroke-width="2.5" points="${incPoints.join(' ')}" />` : ''}
-                ${expCircles.join('')}
-                ${incCircles.join('')}
-            `;
-
-            const xContainer = document.getElementById('lineChartXLabels');
-            xContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
-            xContainer.innerHTML = periods.map(p => `<span>${isMonthly ? p.slice(2) : p}</span>`).join('');
-
             const filterVal = document.getElementById('statsTrendCategoryFilter').value;
             let barData = [];
 
-            if (filterVal) {
+            if (filterVal === 'all_expense') {
+                barData = periods.map(p => {
+                    return scopeTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(p))
+                                   .reduce((s, t) => s + Number(t.amount), 0);
+                });
+            } else if (filterVal) {
                 if (filterVal.startsWith('cat:')) {
                     const catId = filterVal.substring(4);
                     barData = periods.map(p => {
@@ -2399,6 +2314,7 @@
             document.getElementById('barChartY1').innerText = Math.round(gridBarMax * 0.5).toLocaleString();
             document.getElementById('barChartY0.5').innerText = Math.round(gridBarMax * 0.25).toLocaleString();
 
+            const n = periods.length;
             const barsContainer = document.getElementById('barChartBarsContainer');
             barsContainer.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
             barsContainer.innerHTML = barData.map((v, i) => {
@@ -2437,7 +2353,11 @@
             let filterName = '';
             let catIcon = '📊';
 
-            if (filterVal.startsWith('cat:')) {
+            if (filterVal === 'all_expense') {
+                filterName = '總支出 (全部)';
+                catIcon = '💰';
+                filteredTxs = scopeTxs.filter(t => t.type === 'expense' && t.tag !== 'reimburse' && t.date.startsWith(period));
+            } else if (filterVal.startsWith('cat:')) {
                 const catId = filterVal.substring(4);
                 const catObj = categories.find(c => c.id === catId) || { name: '其他', icon: '📌' };
                 filterName = catObj.name;
